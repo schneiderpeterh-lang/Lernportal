@@ -197,19 +197,18 @@
       var a = pick([1, 1, 1, 2, -1]);
       var b = -a * (r1 + r2), c = a * r1 * r2;
       var eq = coef(a, 'x^{2}', true) + coef(b, 'x') + (c ? sgn(c) : '') + ' = 0';
-      var D = b * b - 4 * a * c;
       return {
         q: 'Löse die quadratische Gleichung:  ' + eq,
         note: 'Gib beide Lösungen an (Reihenfolge egal).',
         answers: [{ label: 'x₁', value: r1, tol: 0.001 }, { label: 'x₂', value: r2, tol: 0.001 }],
         set: true,
-        steps: [
-          'a = ' + n(a) + ', b = ' + n(b) + ', c = ' + n(c),
-          'Diskriminante D = b^{2} − 4ac = ' + paren(b) + '^{2} − 4 · ' + paren(a) + ' · ' + paren(c) + ' = ' + n(D),
-          'x = (−b ± √D) : (2a) = (' + n(-b) + ' ± ' + n(Math.sqrt(D)) + ') : ' + paren(2 * a),
+        steps: (a !== 1 ? ['Erst durch ' + paren(a) + ' teilen (Normalform):  x^{2}' + coef(-(r1 + r2), 'x') + (r1 * r2 ? sgn(r1 * r2) : '') + ' = 0'] : []).concat([
+          'p = ' + n(-(r1 + r2)) + ',  q = ' + n(r1 * r2),
+          'p-q-Formel: x = −p/2 ± √((p/2)^{2} − q)',
+          'x = ' + n((r1 + r2) / 2) + ' ± √(' + n(Math.pow((r1 + r2) / 2, 2)) + ' − ' + paren(r1 * r2) + ') = ' + n((r1 + r2) / 2) + ' ± √' + n(Math.pow((r1 - r2) / 2, 2)) + ' = ' + n((r1 + r2) / 2) + ' ± ' + n(Math.abs(r1 - r2) / 2),
           'x₁ = ' + n(Math.max(r1, r2)) + ',  x₂ = ' + n(Math.min(r1, r2))
-        ],
-        hint: 'Mitternachtsformel: x = (−b ± √(b² − 4ac)) : (2a)'
+        ]),
+        hint: 'Normalform x² + px + q = 0 herstellen, dann p-q-Formel: x = −p/2 ± √((p/2)² − q)'
       };
     }
   };
@@ -221,11 +220,11 @@
       var t = R(-6, 6), x1 = R(-4, 2), x2 = x1 + R(1, 4);
       var y1 = m * x1 + t, y2 = m * x2 + t;
       return {
-        q: 'Eine Gerade geht durch die Punkte P(' + n(x1) + ' | ' + n(y1) + ') und Q(' + n(x2) + ' | ' + n(y2) + '). Bestimme die Steigung m und den y-Achsenabschnitt t der Geradengleichung y = mx + t.',
-        answers: [{ label: 'm', value: m, tol: 0.001 }, { label: 't', value: t, tol: 0.001 }],
+        q: 'Eine Gerade geht durch die Punkte P(' + n(x1) + ' | ' + n(y1) + ') und Q(' + n(x2) + ' | ' + n(y2) + '). Bestimme die Steigung m und den y-Achsenabschnitt b der Geradengleichung y = mx + b.',
+        answers: [{ label: 'm', value: m, tol: 0.001 }, { label: 'b', value: t, tol: 0.001 }],
         steps: [
           'm = (y₂ − y₁) : (x₂ − x₁) = (' + n(y2) + ' − ' + paren(y1) + ') : (' + n(x2) + ' − ' + paren(x1) + ') = ' + n(y2 - y1) + ' : ' + n(x2 - x1) + ' = ' + n(m),
-          'P einsetzen: ' + n(y1) + ' = ' + n(m) + ' · ' + paren(x1) + ' + t  →  t = ' + n(t),
+          'P einsetzen: ' + n(y1) + ' = ' + n(m) + ' · ' + paren(x1) + ' + b  →  b = ' + n(t),
           'y = ' + coef(m, 'x', true) + (t ? sgn(t) : '')
         ],
         hint: 'Erst die Steigung mit dem Steigungsdreieck, dann einen Punkt einsetzen.'

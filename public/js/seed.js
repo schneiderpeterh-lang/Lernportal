@@ -54,6 +54,10 @@
         ])
       },
       {
+        id: 'en-redline9-u2', subjectId: 'englisch', kind: 'vokabeln', direction: 'b2a',
+        title: 'Red Line 9 – Unit 2', cards: []
+      },
+      {
         id: 'en-irregular', subjectId: 'englisch', kind: 'vokabeln', direction: 'b2a',
         title: 'Unregelmäßige Verben',
         cards: cards('iv', [
@@ -267,6 +271,36 @@
         ].join('\n')
       },
       {
+        id: 'de-bewerbung', subjectId: 'deutsch', kind: 'merkblatt',
+        title: 'Bewerbung & Lebenslauf (Praktikum)',
+        text: [
+          '# Bewerbung für ein Praktikum',
+          '',
+          '## Das Anschreiben (eine Seite)',
+          '- Oben: eigene Adresse, Telefon, E-Mail (seriös, z. B. vorname.nachname@…)',
+          '- Adresse der Firma, rechts das Datum',
+          '- **Betreff**: Bewerbung um einen Praktikumsplatz vom … bis …',
+          '- Anrede mit Namen, wenn möglich: *Sehr geehrte Frau …,*',
+          '- Einleitung: Warum gerade diese Firma? Woher kenne ich sie?',
+          '- Hauptteil: Was interessiert mich am Beruf? Welche Stärken passen (mit Beispiel)?',
+          '- Schluss: *Über eine Einladung zu einem Vorstellungsgespräch freue ich mich.*',
+          '- Gruß, Unterschrift, Anlagen (Lebenslauf, Zeugnis)',
+          '',
+          '## Der Lebenslauf (tabellarisch)',
+          '- Persönliche Daten: Name, Adresse, Geburtsdatum, Kontakt',
+          '- Schulbildung: aktuelle Schule und Klasse zuerst',
+          '- Praktische Erfahrungen: Ferienjob, Ehrenamt, Verein',
+          '- Kenntnisse: Sprachen, Computer',
+          '- Interessen und Hobbys',
+          '- Ort, Datum, Unterschrift',
+          '',
+          '## Typische Fehler',
+          '- Rechtschreibfehler – immer von jemandem gegenlesen lassen',
+          '- Floskeln ohne Beispiel („Ich bin teamfähig.“ – Woran merkt man das?)',
+          '- Umgangssprache und Smileys'
+        ].join('\n')
+      },
+      {
         id: 'm-formeln', subjectId: 'mathe', kind: 'karten',
         title: 'Formelsammlung Klasse 9',
         cards: cards('f', [
@@ -278,7 +312,8 @@
           ['1. binomische Formel', '(a + b)² = a² + 2ab + b²'],
           ['2. binomische Formel', '(a − b)² = a² − 2ab + b²'],
           ['3. binomische Formel', '(a + b) · (a − b) = a² − b²'],
-          ['Lösungsformel für ax² + bx + c = 0', 'x = (−b ± √(b² − 4ac)) : (2a)  („Mitternachtsformel“)'],
+          ['p-q-Formel für x² + px + q = 0', 'x = −p/2 ± √((p/2)² − q)  (vorher auf Normalform bringen: durch den Faktor vor x² teilen)'],
+          ['Normalform einer Geraden', 'y = m · x + b  (m = Steigung, b = y-Achsenabschnitt)'],
           ['Jahreszinsen', 'Z = K · p : 100'],
           ['Zinseszins', 'Kₙ = K₀ · (1 + p/100)ⁿ'],
           ['Potenzgesetz aᵐ · aⁿ', 'aᵐ⁺ⁿ  (gleiche Basis: Exponenten addieren)'],
@@ -318,17 +353,17 @@
       });
       seed.exams = [
         { id: 'ex-vok', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Unit 3', date: isoDay(3),
-          topics: 'Unit-Vokabeln S. 186–188 und unregelmäßige Verben', deckIds: ['en-vokabeln-beispiel', 'en-irregular'] },
-        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Schulaufgabe', date: isoDay(8),
+          topics: 'Unit-Vokabeln und unregelmäßige Verben', deckIds: ['en-vokabeln-beispiel', 'en-irregular'] },
+        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(8),
           topics: 'Satz des Pythagoras, quadratische Gleichungen, Wurzeln', deckIds: ['m-sa-training', 'm-formeln'] },
-        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Schulaufgabe Erörterung', date: isoDay(15),
+        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Klassenarbeit Erörterung', date: isoDay(15),
           topics: 'Dialektische Erörterung, Kommasetzung, das/dass', deckIds: ['de-eroerterung', 'de-komma', 'de-dassdas'] }
       ];
       seed.grades = [
-        { id: 'g1', subjectId: 'mathe', date: isoDay(-40), type: 'arbeit', grade: 4, note: '1. Schulaufgabe' },
+        { id: 'g1', subjectId: 'mathe', date: isoDay(-40), type: 'arbeit', grade: 4, note: '1. Klassenarbeit' },
         { id: 'g2', subjectId: 'englisch', date: isoDay(-30), type: 'test', grade: 5, note: 'Vokabeltest Unit 2' },
         { id: 'g3', subjectId: 'deutsch', date: isoDay(-25), type: 'arbeit', grade: 3, note: 'Inhaltsangabe' },
-        { id: 'g4', subjectId: 'englisch', date: isoDay(-12), type: 'arbeit', grade: 4, note: '1. Schulaufgabe' },
+        { id: 'g4', subjectId: 'englisch', date: isoDay(-12), type: 'arbeit', grade: 4, note: '1. Klassenarbeit' },
         { id: 'g5', subjectId: 'mathe', date: isoDay(-9), type: 'test', grade: 3, note: 'Kurztest Potenzen' }
       ];
       // Ein paar vergangene Lerntage, damit Statistiken nicht leer sind

@@ -221,7 +221,7 @@
       field('Fach', subjSel),
       field('Art', typeSel),
       field('Datum', h('input', { id: 'ex-date', type: 'date', value: exam.date, required: true })),
-      field('Titel', h('input', { id: 'ex-title', type: 'text', value: exam.title || '', placeholder: 'z. B. 2. Schulaufgabe' })),
+      field('Titel', h('input', { id: 'ex-title', type: 'text', value: exam.title || '', placeholder: 'z. B. 2. Klassenarbeit' })),
       field('Vorbereitung (Tage vorher)', prepInput, 'Leer lassen für den Standardwert. Ab dann taucht der Termin im Lernplan auf.')));
     form.appendChild(field('Stoff / Themen', h('textarea', { id: 'ex-topics', rows: 3, placeholder: 'z. B. Unit 3 Vokabeln S. 186–188, Present Perfect vs. Simple Past' }, exam.topics || '')));
     form.appendChild(h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerninhalte zum Termin'),
@@ -293,7 +293,7 @@
 
   var IMPORT_HELP = {
     vokabeln: { fmt: 'englisch ; deutsch', ex: 'environment ; Umwelt\nto improve ; verbessern\nexperience ; Erfahrung / Erlebnis',
-      prompt: 'Erstelle aus dem Bild/Text eine Vokabelliste. Gib NUR Zeilen im Format "englisch ; deutsch" aus, eine Vokabel pro Zeile, ohne Nummerierung und ohne Überschriften. Mehrere deutsche Bedeutungen trennst du mit " / ". Verben mit "to".' },
+      prompt: 'Erstelle aus dem Bild/Text eine Vokabelliste. Gib NUR Zeilen im Format "englisch ; deutsch" aus, eine Vokabel pro Zeile, ohne Nummerierung und ohne Überschriften. Mehrere deutsche Bedeutungen trennst du mit " / ". Verben mit "to". Gibt es eine Spalte mit Beispielsätzen oder Lautschrift, lass sie weg.' },
     karten: { fmt: 'Vorderseite ; Rückseite', ex: 'Metapher ; Bildhafter Ausdruck ohne „wie“\nHyperbel ; Starke Übertreibung',
       prompt: 'Erstelle aus dem Bild/Text Lernkarteikarten für eine 9. Klasse Realschule. Gib NUR Zeilen im Format "Frage ; Antwort" aus, eine Karte pro Zeile, ohne Nummerierung. Antworten kurz und prüfungsnah. Verwende im Text kein Semikolon.' },
     quiz: { fmt: 'Frage | richtige Antwort | falsch | falsch | falsch', ex: 'If it rains, we ___ at home. | will stay | would stay | stayed | would have stayed',

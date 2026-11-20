@@ -514,6 +514,10 @@ window.LP.LP_DEMO_BANNER = function () {
         ])
       },
       {
+        id: 'en-redline9-u2', subjectId: 'englisch', kind: 'vokabeln', direction: 'b2a',
+        title: 'Red Line 9 – Unit 2', cards: []
+      },
+      {
         id: 'en-irregular', subjectId: 'englisch', kind: 'vokabeln', direction: 'b2a',
         title: 'Unregelmäßige Verben',
         cards: cards('iv', [
@@ -727,6 +731,36 @@ window.LP.LP_DEMO_BANNER = function () {
         ].join('\n')
       },
       {
+        id: 'de-bewerbung', subjectId: 'deutsch', kind: 'merkblatt',
+        title: 'Bewerbung & Lebenslauf (Praktikum)',
+        text: [
+          '# Bewerbung für ein Praktikum',
+          '',
+          '## Das Anschreiben (eine Seite)',
+          '- Oben: eigene Adresse, Telefon, E-Mail (seriös, z. B. vorname.nachname@…)',
+          '- Adresse der Firma, rechts das Datum',
+          '- **Betreff**: Bewerbung um einen Praktikumsplatz vom … bis …',
+          '- Anrede mit Namen, wenn möglich: *Sehr geehrte Frau …,*',
+          '- Einleitung: Warum gerade diese Firma? Woher kenne ich sie?',
+          '- Hauptteil: Was interessiert mich am Beruf? Welche Stärken passen (mit Beispiel)?',
+          '- Schluss: *Über eine Einladung zu einem Vorstellungsgespräch freue ich mich.*',
+          '- Gruß, Unterschrift, Anlagen (Lebenslauf, Zeugnis)',
+          '',
+          '## Der Lebenslauf (tabellarisch)',
+          '- Persönliche Daten: Name, Adresse, Geburtsdatum, Kontakt',
+          '- Schulbildung: aktuelle Schule und Klasse zuerst',
+          '- Praktische Erfahrungen: Ferienjob, Ehrenamt, Verein',
+          '- Kenntnisse: Sprachen, Computer',
+          '- Interessen und Hobbys',
+          '- Ort, Datum, Unterschrift',
+          '',
+          '## Typische Fehler',
+          '- Rechtschreibfehler – immer von jemandem gegenlesen lassen',
+          '- Floskeln ohne Beispiel („Ich bin teamfähig.“ – Woran merkt man das?)',
+          '- Umgangssprache und Smileys'
+        ].join('\n')
+      },
+      {
         id: 'm-formeln', subjectId: 'mathe', kind: 'karten',
         title: 'Formelsammlung Klasse 9',
         cards: cards('f', [
@@ -738,7 +772,8 @@ window.LP.LP_DEMO_BANNER = function () {
           ['1. binomische Formel', '(a + b)² = a² + 2ab + b²'],
           ['2. binomische Formel', '(a − b)² = a² − 2ab + b²'],
           ['3. binomische Formel', '(a + b) · (a − b) = a² − b²'],
-          ['Lösungsformel für ax² + bx + c = 0', 'x = (−b ± √(b² − 4ac)) : (2a)  („Mitternachtsformel“)'],
+          ['p-q-Formel für x² + px + q = 0', 'x = −p/2 ± √((p/2)² − q)  (vorher auf Normalform bringen: durch den Faktor vor x² teilen)'],
+          ['Normalform einer Geraden', 'y = m · x + b  (m = Steigung, b = y-Achsenabschnitt)'],
           ['Jahreszinsen', 'Z = K · p : 100'],
           ['Zinseszins', 'Kₙ = K₀ · (1 + p/100)ⁿ'],
           ['Potenzgesetz aᵐ · aⁿ', 'aᵐ⁺ⁿ  (gleiche Basis: Exponenten addieren)'],
@@ -778,17 +813,17 @@ window.LP.LP_DEMO_BANNER = function () {
       });
       seed.exams = [
         { id: 'ex-vok', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Unit 3', date: isoDay(3),
-          topics: 'Unit-Vokabeln S. 186–188 und unregelmäßige Verben', deckIds: ['en-vokabeln-beispiel', 'en-irregular'] },
-        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Schulaufgabe', date: isoDay(8),
+          topics: 'Unit-Vokabeln und unregelmäßige Verben', deckIds: ['en-vokabeln-beispiel', 'en-irregular'] },
+        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(8),
           topics: 'Satz des Pythagoras, quadratische Gleichungen, Wurzeln', deckIds: ['m-sa-training', 'm-formeln'] },
-        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Schulaufgabe Erörterung', date: isoDay(15),
+        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Klassenarbeit Erörterung', date: isoDay(15),
           topics: 'Dialektische Erörterung, Kommasetzung, das/dass', deckIds: ['de-eroerterung', 'de-komma', 'de-dassdas'] }
       ];
       seed.grades = [
-        { id: 'g1', subjectId: 'mathe', date: isoDay(-40), type: 'arbeit', grade: 4, note: '1. Schulaufgabe' },
+        { id: 'g1', subjectId: 'mathe', date: isoDay(-40), type: 'arbeit', grade: 4, note: '1. Klassenarbeit' },
         { id: 'g2', subjectId: 'englisch', date: isoDay(-30), type: 'test', grade: 5, note: 'Vokabeltest Unit 2' },
         { id: 'g3', subjectId: 'deutsch', date: isoDay(-25), type: 'arbeit', grade: 3, note: 'Inhaltsangabe' },
-        { id: 'g4', subjectId: 'englisch', date: isoDay(-12), type: 'arbeit', grade: 4, note: '1. Schulaufgabe' },
+        { id: 'g4', subjectId: 'englisch', date: isoDay(-12), type: 'arbeit', grade: 4, note: '1. Klassenarbeit' },
         { id: 'g5', subjectId: 'mathe', date: isoDay(-9), type: 'test', grade: 3, note: 'Kurztest Potenzen' }
       ];
       // Ein paar vergangene Lerntage, damit Statistiken nicht leer sind
@@ -1157,8 +1192,8 @@ window.LP.LP_DEMO_BANNER = function () {
   function subject(id) { return store.get('subjects', id) || { id: id, name: id || 'Allgemein', color: '#6b7280', short: '?' }; }
 
   var EXAM_TYPES = {
-    arbeit: { label: 'Schulaufgabe / Klassenarbeit', short: 'Arbeit', prep: 10, weight: 3 },
-    test: { label: 'Kurztest / Ex', short: 'Test', prep: 4, weight: 2 },
+    arbeit: { label: 'Klassenarbeit', short: 'Klassenarbeit', prep: 10, weight: 3 },
+    test: { label: 'Test / kurze schriftliche Übung', short: 'Test', prep: 4, weight: 2 },
     vokabeltest: { label: 'Vokabeltest', short: 'Vokabeltest', prep: 5, weight: 2 },
     referat: { label: 'Referat / Präsentation', short: 'Referat', prep: 7, weight: 2 },
     sonstiges: { label: 'Sonstiges', short: 'Termin', prep: 4, weight: 1 }
@@ -1380,19 +1415,18 @@ window.LP.LP_DEMO_BANNER = function () {
       var a = pick([1, 1, 1, 2, -1]);
       var b = -a * (r1 + r2), c = a * r1 * r2;
       var eq = coef(a, 'x^{2}', true) + coef(b, 'x') + (c ? sgn(c) : '') + ' = 0';
-      var D = b * b - 4 * a * c;
       return {
         q: 'Löse die quadratische Gleichung:  ' + eq,
         note: 'Gib beide Lösungen an (Reihenfolge egal).',
         answers: [{ label: 'x₁', value: r1, tol: 0.001 }, { label: 'x₂', value: r2, tol: 0.001 }],
         set: true,
-        steps: [
-          'a = ' + n(a) + ', b = ' + n(b) + ', c = ' + n(c),
-          'Diskriminante D = b^{2} − 4ac = ' + paren(b) + '^{2} − 4 · ' + paren(a) + ' · ' + paren(c) + ' = ' + n(D),
-          'x = (−b ± √D) : (2a) = (' + n(-b) + ' ± ' + n(Math.sqrt(D)) + ') : ' + paren(2 * a),
+        steps: (a !== 1 ? ['Erst durch ' + paren(a) + ' teilen (Normalform):  x^{2}' + coef(-(r1 + r2), 'x') + (r1 * r2 ? sgn(r1 * r2) : '') + ' = 0'] : []).concat([
+          'p = ' + n(-(r1 + r2)) + ',  q = ' + n(r1 * r2),
+          'p-q-Formel: x = −p/2 ± √((p/2)^{2} − q)',
+          'x = ' + n((r1 + r2) / 2) + ' ± √(' + n(Math.pow((r1 + r2) / 2, 2)) + ' − ' + paren(r1 * r2) + ') = ' + n((r1 + r2) / 2) + ' ± √' + n(Math.pow((r1 - r2) / 2, 2)) + ' = ' + n((r1 + r2) / 2) + ' ± ' + n(Math.abs(r1 - r2) / 2),
           'x₁ = ' + n(Math.max(r1, r2)) + ',  x₂ = ' + n(Math.min(r1, r2))
-        ],
-        hint: 'Mitternachtsformel: x = (−b ± √(b² − 4ac)) : (2a)'
+        ]),
+        hint: 'Normalform x² + px + q = 0 herstellen, dann p-q-Formel: x = −p/2 ± √((p/2)² − q)'
       };
     }
   };
@@ -1404,11 +1438,11 @@ window.LP.LP_DEMO_BANNER = function () {
       var t = R(-6, 6), x1 = R(-4, 2), x2 = x1 + R(1, 4);
       var y1 = m * x1 + t, y2 = m * x2 + t;
       return {
-        q: 'Eine Gerade geht durch die Punkte P(' + n(x1) + ' | ' + n(y1) + ') und Q(' + n(x2) + ' | ' + n(y2) + '). Bestimme die Steigung m und den y-Achsenabschnitt t der Geradengleichung y = mx + t.',
-        answers: [{ label: 'm', value: m, tol: 0.001 }, { label: 't', value: t, tol: 0.001 }],
+        q: 'Eine Gerade geht durch die Punkte P(' + n(x1) + ' | ' + n(y1) + ') und Q(' + n(x2) + ' | ' + n(y2) + '). Bestimme die Steigung m und den y-Achsenabschnitt b der Geradengleichung y = mx + b.',
+        answers: [{ label: 'm', value: m, tol: 0.001 }, { label: 'b', value: t, tol: 0.001 }],
         steps: [
           'm = (y₂ − y₁) : (x₂ − x₁) = (' + n(y2) + ' − ' + paren(y1) + ') : (' + n(x2) + ' − ' + paren(x1) + ') = ' + n(y2 - y1) + ' : ' + n(x2 - x1) + ' = ' + n(m),
-          'P einsetzen: ' + n(y1) + ' = ' + n(m) + ' · ' + paren(x1) + ' + t  →  t = ' + n(t),
+          'P einsetzen: ' + n(y1) + ' = ' + n(m) + ' · ' + paren(x1) + ' + b  →  b = ' + n(t),
           'y = ' + coef(m, 'x', true) + (t ? sgn(t) : '')
         ],
         hint: 'Erst die Steigung mit dem Steigungsdreieck, dann einen Punkt einsetzen.'
@@ -3288,7 +3322,7 @@ window.LP.LP_DEMO_BANNER = function () {
       field('Fach', subjSel),
       field('Art', typeSel),
       field('Datum', h('input', { id: 'ex-date', type: 'date', value: exam.date, required: true })),
-      field('Titel', h('input', { id: 'ex-title', type: 'text', value: exam.title || '', placeholder: 'z. B. 2. Schulaufgabe' })),
+      field('Titel', h('input', { id: 'ex-title', type: 'text', value: exam.title || '', placeholder: 'z. B. 2. Klassenarbeit' })),
       field('Vorbereitung (Tage vorher)', prepInput, 'Leer lassen für den Standardwert. Ab dann taucht der Termin im Lernplan auf.')));
     form.appendChild(field('Stoff / Themen', h('textarea', { id: 'ex-topics', rows: 3, placeholder: 'z. B. Unit 3 Vokabeln S. 186–188, Present Perfect vs. Simple Past' }, exam.topics || '')));
     form.appendChild(h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerninhalte zum Termin'),
@@ -3360,7 +3394,7 @@ window.LP.LP_DEMO_BANNER = function () {
 
   var IMPORT_HELP = {
     vokabeln: { fmt: 'englisch ; deutsch', ex: 'environment ; Umwelt\nto improve ; verbessern\nexperience ; Erfahrung / Erlebnis',
-      prompt: 'Erstelle aus dem Bild/Text eine Vokabelliste. Gib NUR Zeilen im Format "englisch ; deutsch" aus, eine Vokabel pro Zeile, ohne Nummerierung und ohne Überschriften. Mehrere deutsche Bedeutungen trennst du mit " / ". Verben mit "to".' },
+      prompt: 'Erstelle aus dem Bild/Text eine Vokabelliste. Gib NUR Zeilen im Format "englisch ; deutsch" aus, eine Vokabel pro Zeile, ohne Nummerierung und ohne Überschriften. Mehrere deutsche Bedeutungen trennst du mit " / ". Verben mit "to". Gibt es eine Spalte mit Beispielsätzen oder Lautschrift, lass sie weg.' },
     karten: { fmt: 'Vorderseite ; Rückseite', ex: 'Metapher ; Bildhafter Ausdruck ohne „wie“\nHyperbel ; Starke Übertreibung',
       prompt: 'Erstelle aus dem Bild/Text Lernkarteikarten für eine 9. Klasse Realschule. Gib NUR Zeilen im Format "Frage ; Antwort" aus, eine Karte pro Zeile, ohne Nummerierung. Antworten kurz und prüfungsnah. Verwende im Text kein Semikolon.' },
     quiz: { fmt: 'Frage | richtige Antwort | falsch | falsch | falsch', ex: 'If it rains, we ___ at home. | will stay | would stay | stayed | would have stayed',

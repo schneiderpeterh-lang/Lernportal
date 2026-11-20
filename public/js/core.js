@@ -343,8 +343,8 @@
   function subject(id) { return store.get('subjects', id) || { id: id, name: id || 'Allgemein', color: '#6b7280', short: '?' }; }
 
   var EXAM_TYPES = {
-    arbeit: { label: 'Schulaufgabe / Klassenarbeit', short: 'Arbeit', prep: 10, weight: 3 },
-    test: { label: 'Kurztest / Ex', short: 'Test', prep: 4, weight: 2 },
+    arbeit: { label: 'Klassenarbeit', short: 'Klassenarbeit', prep: 10, weight: 3 },
+    test: { label: 'Test / kurze schriftliche Übung', short: 'Test', prep: 4, weight: 2 },
     vokabeltest: { label: 'Vokabeltest', short: 'Vokabeltest', prep: 5, weight: 2 },
     referat: { label: 'Referat / Präsentation', short: 'Referat', prep: 7, weight: 2 },
     sonstiges: { label: 'Sonstiges', short: 'Termin', prep: 4, weight: 1 }
