@@ -55,7 +55,29 @@
       },
       {
         id: 'en-redline9-u2', subjectId: 'englisch', kind: 'vokabeln', direction: 'b2a',
-        title: 'Red Line 9 – Unit 2', cards: []
+        title: 'Red Line 9 – Unit 2',
+        cards: cards('rl2-', [
+          ['the Caribbean', 'die Karibik', null, 'The weather is good in the Caribbean.'],
+          ['tropical', 'tropisch', null, 'I love tropical fish.'],
+          ['autumn', 'Herbst', null, 'September and October are in autumn.'],
+          ['hurricane', 'Orkan / Wirbelsturm', null, 'There are strong hurricanes in the autumn.'],
+          ['tourist industry', 'Tourismus', null, 'There are many jobs in the tourist industry.'],
+          ['Caribbean', 'karibisch / Karibe / Karibin', null, 'There are lots of Caribbean islands.'],
+          ['French', 'französisch / aus Frankreich', null, 'French → France'],
+          ['Dutch', 'niederländisch', null, 'Dutch people are from the Netherlands.'],
+          ['descendant', 'Abkömmling / Nachfahre / Nachfahrin', null, 'A lot of people are descendants of slaves.'],
+          ['rhythm', 'Rhythmus', null, 'Salsa has a great rhythm for dancing.'],
+          ['at first', 'zuerst / zunächst', null, 'I was scared at first, but the ride was OK.'],
+          ['the British', 'die Briten', null, 'The British didn’t help the Spanish ships.'],
+          ['South America', 'Südamerika', null, 'Ships carried gold from South America to Spain.'],
+          ['Jamaican', 'Jamaikaner / Jamaikanerin', null, 'Most Jamaicans are descendants of slaves.'],
+          ['role model', 'Vorbild', null, 'Bob Marley is Greg’s role model.'],
+          ['lyrics', 'Liedtext', null, 'Immer Plural: Do you know the lyrics of this song?'],
+          ['return', 'Rückkehr', null, 'We waited months for my brother’s return.'],
+          ['full-time', 'Vollzeit- / Ganztags-', null, 'full-time ↔ part-time'],
+          ['musician', 'Musiker / Musikerin', null, 'Merke: -cian am Ende (wie magician).'],
+          ['goal', 'Ziel / Tor', null, 'My goal is to be the best in the team.']
+        ])
       },
       {
         id: 'en-irregular', subjectId: 'englisch', kind: 'vokabeln', direction: 'b2a',
@@ -346,7 +368,7 @@
       id: 'ex-vok-woche', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Englisch',
       date: isoDay((4 - dow + 7) % 7), repeat: 'weekly', skipDates: [], until: null,
       topics: 'Vokabeln der aktuellen Unit (Red Line 9) – Lernpaket jede Woche ergänzen',
-      deckIds: ['en-redline9-u2', 'en-irregular']
+      deckIds: ['en-redline9-u2']
     };
 
     var seed = {
@@ -361,7 +383,6 @@
         title: 'Training: Pythagoras & quadratische Gleichungen',
         topics: ['pythagoras', 'quadgl', 'wurzeln']
       });
-      weeklyVocab.deckIds = ['en-vokabeln-beispiel', 'en-irregular'];
       seed.exams = [weeklyVocab,
         { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(7),
           topics: 'Satz des Pythagoras, quadratische Gleichungen, Wurzeln', deckIds: ['m-sa-training', 'm-formeln'] },
