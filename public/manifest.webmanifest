@@ -1,0 +1,10 @@
+{
+  "name": "Lernportal",
+  "short_name": "Lernportal",
+  "start_url": "./#/heute",
+  "display": "fullscreen",
+  "background_color": "#f6f7fb",
+  "theme_color": "#2d4fd6",
+  "lang": "de",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

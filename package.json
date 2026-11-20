@@ -1,0 +1,12 @@
+{
+  "name": "lernportal",
+  "version": "1.0.0",
+  "description": "Lernportal für Klasse 9 – feste Lernzeiten, Termine, Vokabeln, Mathe-Training. Ohne Abhängigkeiten.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node build-demo.js"
+  },
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

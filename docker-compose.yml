@@ -1,0 +1,12 @@
+services:
+  lernportal:
+    build: .
+    container_name: lernportal
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Europe/Berlin
+      # - PARENT_PIN=123456   # optional: Eltern-PIN fest vorgeben
