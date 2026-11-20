@@ -623,9 +623,11 @@
       e.preventDefault();
       store.put('settings', Object.assign({}, store.get('settings', 'main') || {}, {
         id: 'main', studentName: val('st-name').trim(), days: days, startTime: val('st-time') || '16:00',
-        minutes: LP.clamp(Number(val('st-min')) || 45, 15, 120), idleSeconds: LP.clamp(Number(val('st-idle')) || 90, 30, 600)
+        minutes: LP.clamp(Number(val('st-min')) || 45, 15, 120), idleSeconds: LP.clamp(Number(val('st-idle')) || 90, 30, 600),
+        lrs: document.getElementById('st-lrs').checked, readable: document.getElementById('st-readable').checked
       }));
       LP.toast('Einstellungen gespeichert', 'good');
+      LP.applyReadable();
     } },
     h('h2', null, 'Feste Lernzeit'),
     h('p', { class: 'muted small' }, 'Feste Tage, feste Uhrzeit, fester Ablauf: Aufwärmen → Block 1 → Pause → Block 2 → Mini-Test. Die Inhalte richten sich automatisch nach den nächsten Terminen.'),
@@ -635,6 +637,12 @@
       field('Dauer (Minuten)', h('input', { id: 'st-min', type: 'number', min: 15, max: 120, step: 5, value: st.minutes }), '30–45 Minuten sind für Klasse 9 ein guter Wert.'),
       field('Pause bei Untätigkeit nach (Sek.)', h('input', { id: 'st-idle', type: 'number', min: 30, max: 600, value: st.idleSeconds }), 'Die Uhr stoppt, wenn nichts getan wird.')),
     h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerntage'), dayBox),
+    h('h2', null, 'Rechtschreibschwäche'),
+    h('label', { class: 'check' }, h('input', { id: 'st-lrs', type: 'checkbox', checked: !!st.lrs }),
+      h('span', null, h('strong', null, 'Rechtschreibung nicht bewerten'), h('br'), h('span', { class: 'muted small' },
+        'Wie beim Nachteilsausgleich in der Schule: Ein erkennbar richtiges Wort zählt als richtig. Die korrekte Schreibweise wird freundlich gezeigt, aber nicht als Fehler gewertet – beim Tippen und in der Schreibrunde.'))),
+    h('label', { class: 'check' }, h('input', { id: 'st-readable', type: 'checkbox', checked: !!st.readable }),
+      h('span', null, h('strong', null, 'Lesefreundliche Darstellung'), h('br'), h('span', { class: 'muted small' }, 'Größere Schrift, mehr Abstand zwischen Buchstaben und Zeilen, keine Kursivschrift.'))),
     h('div', { class: 'row end' }, h('button', { class: 'btn primary', type: 'submit' }, 'Speichern')));
     el.appendChild(form);
 

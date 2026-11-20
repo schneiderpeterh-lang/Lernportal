@@ -335,9 +335,9 @@
     },
 
     // Schreibrunde: Foto hochladen, Server prüft (KI) oder meldet, dass selbst kontrolliert wird
-    uploadWriting: function (dataUrl, items) {
+    uploadWriting: function (dataUrl, items, lenient) {
       if (this.mode === 'local') return Promise.resolve({ photoId: null, results: null, reason: 'Demo-Version: Bitte selbst kontrollieren.' });
-      return this.api('writing', { image: dataUrl, items: items });
+      return this.api('writing', { image: dataUrl, items: items, lenient: Boolean(lenient) });
     },
     photoUrl: function (id) { return id && this.token ? 'api/foto/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(this.token) : null; },
 
@@ -346,7 +346,7 @@
 
   /* ---------------------------------------------------------------- Einstellungen & Fächer */
 
-  var DEFAULT_SETTINGS = { id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90 };
+  var DEFAULT_SETTINGS = { id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, lrs: false, readable: false };
   function settings() { return Object.assign({}, DEFAULT_SETTINGS, store.get('settings', 'main') || {}); }
   function subjects() { return store.list('subjects').sort(function (a, b) { return (a.order || 99) - (b.order || 99) || a.name.localeCompare(b.name); }); }
   function subject(id) { return store.get('subjects', id) || { id: id, name: id || 'Allgemein', color: '#6b7280', short: '?' }; }

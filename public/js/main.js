@@ -36,6 +36,7 @@
   }
 
   function render() {
+    LP.applyReadable();
     if (cleanup) { try { cleanup(); } catch (e) { /* egal */ } cleanup = null; }
     var r = route();
     LP.clear(app);
@@ -78,6 +79,7 @@
     if (!focusMode) window.scrollTo(0, 0);
   }
   LP.rerender = render;
+  LP.applyReadable = function () { document.body.classList.toggle('readable', Boolean(LP.settings().readable)); };
 
   window.addEventListener('hashchange', render);
 

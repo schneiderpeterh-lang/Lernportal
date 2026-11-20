@@ -205,12 +205,21 @@
       var fbv = h('div', { class: 'feedback' });
       var row = h('div', { class: 'row end' });
       var stage = 'ask';
+      // Rechtschreibschwäche: erkennbar richtige Wörter zählen als richtig
+      var lenient = Boolean(LP.settings().lrs);
+      var others = (item.deck.cards || []).map(function (c) { return item.dir === 'b2a' ? c.a : c.b; });
       function check() {
         if (stage === 'ask') {
           if (!input.value.trim()) { input.focus(); return; }
-          var r = LP.learn.checkText(input.value, item.answer).result;
+          var res = LP.learn.checkText(input.value, item.answer, { lenient: lenient, others: others });
+          var r = res.result;
           LP.clear(fbv);
-          if (r === 'right') {
+          if (r === 'right' && res.spelling) {
+            input.classList.add('is-right'); input.readOnly = true;
+            fbv.appendChild(h('div', { class: 'fb good' }, svg(I.check), 'Richtig – das Wort kennst du!'));
+            fbv.appendChild(h('div', { class: 'spell-hint' }, h('span', { class: 'muted small' }, 'So schreibt man es:'), h('span', { class: 'spell-word' }, item.answer)));
+            stage = 'done'; LP.clear(row); row.appendChild(nextButton('right'));
+          } else if (r === 'right') {
             input.classList.add('is-right'); input.readOnly = true;
             fbv.appendChild(h('div', { class: 'fb good' }, svg(I.check), 'Richtig!' + (LP.learn.norm(input.value) !== LP.learn.norm(item.answer) ? '  (' + item.answer + ')' : '')));
             stage = 'done'; LP.clear(row); finish('right', 900);
@@ -226,7 +235,7 @@
             setTimeout(function () { input.classList.remove('is-wrong'); input.value = ''; input.placeholder = item.answer; input.focus(); }, 50);
           }
         } else if (stage === 'copy') {
-          var r2 = LP.learn.checkText(input.value, item.answer).result;
+          var r2 = LP.learn.checkText(input.value, item.answer, { lenient: lenient, others: others }).result;
           if (r2 === 'wrong') { input.classList.add('shake'); setTimeout(function () { input.classList.remove('shake'); }, 400); return; }
           stage = 'done'; finish('wrong');
         }

@@ -48,6 +48,7 @@
     });
     var subj = LP.subject(step.subjectId || (picks[0] && picks[0].deck.subjectId));
     var photo = null, photoId = null;
+    var lenient = Boolean(LP.settings().lrs);
 
     function card() {
       LP.clear(host);
@@ -99,7 +100,7 @@
       var c = card();
       c.appendChild(h('div', { class: 'checking' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }),
         h('span', null, store.aiCheck && store.aiCheck.available ? 'Dein Blatt wird geprüft …' : 'Foto wird gespeichert …')));
-      store.uploadWriting(photo, items.map(function (it) { return { prompt: it.prompt, answer: it.answer }; }))
+      store.uploadWriting(photo, items.map(function (it) { return { prompt: it.prompt, answer: it.answer }; }), lenient)
         .then(function (res) {
           photoId = res.photoId || null;
           if (res.results && res.legible === false) return phaseUnreadable(res.comment);
@@ -124,7 +125,7 @@
 
     /* ---------- 4a. Ergebnis der KI */
     function phaseAiResult(res) {
-      items.forEach(function (it, i) { var r = res.results[i] || {}; it.read = r.read || ''; it.ok = Boolean(r.correct); it.note = r.note || ''; });
+      items.forEach(function (it, i) { var r = res.results[i] || {}; it.read = r.read || ''; it.ok = Boolean(r.correct); it.spellingOk = r.spellingOk !== false; it.note = r.note || ''; });
       var c = card();
       var right = items.filter(function (it) { return it.ok; }).length;
       c.appendChild(h('h2', null, right + ' von ' + items.length + ' richtig'));
@@ -139,7 +140,9 @@
       items.forEach(function (it) { it.ok = null; it.read = ''; });
       var c = card();
       c.appendChild(h('h2', null, 'Jetzt selbst kontrollieren'));
-      c.appendChild(h('p', { class: 'muted' }, (reason ? reason + ' ' : '') + 'Vergleiche dein Blatt mit den Lösungen und sei ehrlich – ein Rechtschreibfehler zählt als falsch.'));
+      c.appendChild(h('p', { class: 'muted' }, (reason ? reason + ' ' : '') + (lenient
+        ? 'Vergleiche dein Blatt mit den Lösungen. Ist das richtige Wort gemeint, zählt es als richtig – auch wenn die Schreibweise abweicht. Schau dir die Schreibweise trotzdem genau an.'
+        : 'Vergleiche dein Blatt mit den Lösungen und sei ehrlich – ein Rechtschreibfehler zählt als falsch.')));
       var table = resultTable(true);
       c.appendChild(table);
       var go = h('button', { class: 'btn primary big', disabled: true, onclick: function () { finish('selbst'); } }, 'Auswerten');
@@ -158,6 +161,7 @@
           h('span', { class: 'muted small' }, it.nr + '. ' + it.prompt),
           selfMode ? h('strong', null, it.answer) :
             h('span', null, h('strong', { class: it.ok ? '' : 'strike' }, it.read || '(nichts gefunden)'), it.ok ? null : h('span', null, '  →  ', h('strong', null, it.answer))),
+          !selfMode && it.ok && it.spellingOk === false ? h('span', { class: 'small spell-inline' }, 'So schreibt man es: ', h('strong', null, it.answer)) : null,
           it.note && !selfMode ? h('span', { class: 'small wr-note' }, it.note) : null);
         row.appendChild(mark);
         row.appendChild(body);
@@ -183,6 +187,16 @@
         items: items.map(function (it) { return { prompt: it.prompt, answer: it.answer, read: it.read || '', ok: Boolean(it.ok), note: it.note || '' }; })
       });
       var stats = { right: items.length - wrong.length, wrong: wrong.length };
+      var spelling = items.filter(function (it) { return it.ok && it.spellingOk === false; });
+      if (!wrong.length && spelling.length) {
+        var cs = card();
+        cs.appendChild(h('div', { class: 'big-check' }, svg(I.check)));
+        cs.appendChild(h('h2', null, 'Alle Wörter gewusst!'));
+        cs.appendChild(h('p', null, 'Zum Einprägen: Schreib diese Wörter ', h('strong', null, 'einmal'), ' so ab, wie sie hier stehen:'));
+        cs.appendChild(h('ul', { class: 'write-fix' }, spelling.map(function (it) { return h('li', null, h('strong', null, it.answer)); })));
+        cs.appendChild(h('div', { class: 'row end' }, h('button', { class: 'btn primary big', onclick: function () { done(stats); } }, 'Erledigt')));
+        return;
+      }
       if (!wrong.length) {
         var c1 = card();
         c1.appendChild(h('div', { class: 'big-check' }, svg(I.check)));

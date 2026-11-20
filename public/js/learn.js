@@ -44,13 +44,46 @@
     });
     return out;
   }
-  function checkText(input, expected) {
+  // Lautnahe Vereinfachung für typische Rechtschreibfehler (Doppelbuchstaben, ph/f, ck/k, c/k, ie/ei …)
+  function phon(s) {
+    return norm(s).replace(/ph/g, 'f').replace(/ck/g, 'k').replace(/c/g, 'k').replace(/z/g, 's')
+      .replace(/y/g, 'i').replace(/ei|ie/g, 'i').replace(/ou/g, 'u').replace(/th/g, 't').replace(/wh/g, 'w')
+      .replace(/(.)\1+/g, '$1').replace(/e(\s|$)/g, '$1');
+  }
+  function bestDistance(given, expected) {
+    var best = Infinity;
+    variants(expected).forEach(function (v) {
+      var d = lev(v, given);
+      if (given.indexOf('to ') === 0) d = Math.min(d, lev(v, given.slice(3)));
+      best = Math.min(best, d);
+    });
+    return best;
+  }
+
+  /*
+   * Prüft eine getippte Antwort.
+   * opts.lenient (Rechtschreibschwäche): Ein erkennbar gemeintes Wort zählt als richtig (spelling: true),
+   *   solange es nicht besser zu einer anderen Lösung (opts.others) passt.
+   */
+  function checkText(input, expected, opts) {
+    opts = opts || {};
     var given = norm(input);
     if (!given) return { result: 'wrong' };
     var vs = variants(expected);
     var withoutTo = given.indexOf('to ') === 0 ? given.slice(3) : given;
     for (var i = 0; i < vs.length; i++) {
       if (vs[i] === given || vs[i] === withoutTo) return { result: 'right' };
+    }
+    if (opts.lenient) {
+      var d = bestDistance(given, expected);
+      var target = vs.reduce(function (m, v) { return Math.max(m, v.length); }, 0);
+      var tol = target >= 4 ? Math.max(1, Math.ceil(target * 0.34)) : (target >= 3 ? 1 : 0);
+      var soundsSame = vs.some(function (v) { return phon(v) === phon(given) || phon(v) === phon(withoutTo); });
+      if (soundsSame || d <= tol) {
+        var closerOther = (opts.others || []).some(function (o) { return o !== expected && bestDistance(given, o) < d; });
+        if (!closerOther) return { result: 'right', spelling: true };
+      }
+      return { result: 'wrong' };
     }
     for (var k = 0; k < vs.length; k++) {
       var allowed = vs[k].length >= 10 ? 2 : vs[k].length >= 5 ? 1 : 0;

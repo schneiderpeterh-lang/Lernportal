@@ -303,7 +303,7 @@ async function handleApi(req, res, parts) {
     fs.writeFileSync(path.join(PHOTO_DIR, photoId + '.' + ext), buf);
     if (!writingCheck.status().available) return send(res, 200, { photoId, results: null, reason: writingCheck.status().reason });
     try {
-      const check = await writingCheck.check(buf.toString('base64'), 'image/' + m[1], items);
+      const check = await writingCheck.check(buf.toString('base64'), 'image/' + m[1], items, body.lenient === true);
       return send(res, 200, { photoId, results: check.results, legible: check.legible, comment: check.comment, model: check.model });
     } catch (err) {
       console.error('KI-Prüfung fehlgeschlagen:', err.message);
