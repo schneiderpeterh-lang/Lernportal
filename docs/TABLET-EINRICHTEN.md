@@ -35,6 +35,8 @@ In Fully: vom linken Rand wischen → *Settings*.
 - **Device Management → Keep Screen On:** an (während des Lernens), *Screen Off Timer* nach Wunsch
 - **Kiosk Mode (PLUS) → Enable Kiosk Mode:** an, **Kiosk Exit PIN** setzen (nicht dieselbe wie die Eltern-PIN!)
 - **Kiosk Mode → Disable Status Bar / Disable Volume Buttons / Disable Power Button (wo verfügbar)** nach Wunsch
+- **Web Content Settings → Enable File Uploads** und **Enable Camera Capture Uploads** (o. ä.): **an** –
+  nötig für die Schreibrunde (Foto vom Blatt). Fire OS fragt beim ersten Foto nach der Kamera-Berechtigung: erlauben.
 - Fully fragt beim Aktivieren nach Berechtigungen (z. B. „Über anderen Apps anzeigen“, Bedienungshilfe) – zustimmen.
 
 Fully holt sich danach sofort den Vordergrund zurück, wenn jemand die Home-Taste drückt.
@@ -42,7 +44,9 @@ Verlassen kann man den Kiosk nur mit Wischgeste + Kiosk-PIN.
 
 ### 4. Fire-OS-Kindersicherung als zweite Sperre
 *Einstellungen → Kindersicherung* einschalten (Passwort vergeben) und sperren:
-Webbrowser (Silk), Amazon-Stores, Prime Video, Kamera, E-Mail/Kontakte/Kalender, soziale Netzwerke.
+Webbrowser (Silk), Amazon-Stores, Prime Video, E-Mail/Kontakte/Kalender, soziale Netzwerke.
+**Die Kamera nicht sperren** – sie wird für die Schreibrunde gebraucht. Die Kamera-App selbst ist aus dem Kiosk heraus
+nicht erreichbar; Fully öffnet sie nur kurz für das Foto.
 Damit ist auch dann nichts zu holen, wenn der Kiosk einmal verlassen würde.
 
 ### 5. Für Fortgeschrittene: Geräteadministrator (komplett dicht)
@@ -65,6 +69,8 @@ Das ist für die meisten Familien nicht nötig – Schritt 3 und 4 reichen in de
    - **Web-Browser** erlauben, aber *Webinhalte automatisch zulassen* **ausschalten**,
    - unter *Inhalte hinzufügen → Websites* die Adresse `http://<IP-des-Servers>:3000` hinzufügen.
 3. Alle anderen Apps/Bücher/Videos aus dem Profil entfernen.
+
+Hinweis: Ob der Amazon-Kids-Browser Fotos für die Schreibrunde hochladen kann, ist nicht sicher. Dann bleibt nur Weg A.
 
 Einschränkungen: Der Kids-Browser zeigt eine eigene Leiste, das Profil kann man über das Eltern-Passwort verlassen,
 und je nach Fire-OS-Version werden Adressen im Heimnetz (192.168.…) nicht als Website akzeptiert.

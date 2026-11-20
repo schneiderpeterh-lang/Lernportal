@@ -10,7 +10,7 @@
     return h('header', { class: 'page-head' }, h('div', null, h('h1', null, title), sub ? h('p', { class: 'muted' }, sub) : null), right || null);
   }
   function stepIcon(kind) {
-    return { review: I.bolt, focus: I.target, break: I.coffee, test: I.check }[kind] || I.target;
+    return { review: I.bolt, focus: I.target, break: I.coffee, test: I.check, write: LP.writing.CAMERA }[kind] || I.target;
   }
   function greeting() {
     var hr = new Date().getHours();
@@ -199,6 +199,13 @@
       if (!s) return;
       var total = s.minutes * 60;
       var rem = run.remain[run.idx];
+      if (s.kind === 'write') {
+        clockLabel.textContent = s.title + ' · ' + s.sub;
+        clock.textContent = '';
+        bar.firstChild.style.width = '0%';
+        root.style.setProperty('--c', s.subjectId ? LP.subject(s.subjectId).color : 'var(--accent)');
+        return;
+      }
       if (s.kind === 'test') {
         clockLabel.textContent = s.title + ' · Frage ' + Math.min(run.testDone + 1, s.questions) + ' von ' + s.questions;
         clock.textContent = '';
@@ -259,7 +266,7 @@
     function completeStep() {
       var s = step();
       if (!s) return;
-      var bonus = (s.kind === 'review' || s.kind === 'focus') ? L.XP.block : 0;
+      var bonus = (s.kind === 'review' || s.kind === 'focus' || s.kind === 'write') ? L.XP.block : 0;
       if (bonus && !run.blockXp[run.idx]) { run.blockXp[run.idx] = true; addXp(bonus); }
       run.remain[run.idx] = 0;
       ui.beep('step');
@@ -275,7 +282,7 @@
         h('div', { class: 'big-check' }, svg(I.check)),
         h('h2', null, s.kind === 'break' ? 'Pause vorbei' : s.title + ' geschafft!'),
         s.kind !== 'break' ? h('p', { class: 'muted tabular' }, stats.right + ' richtig · ' + stats.wrong + ' falsch' + (bonus ? ' · +' + bonus + ' Bonuspunkte' : '')) : null,
-        h('p', null, 'Als Nächstes: ', h('strong', null, nxt.title), ' (' + (nxt.kind === 'test' ? nxt.questions + ' Fragen' : nxt.minutes + ' min') + ')'),
+        h('p', null, 'Als Nächstes: ', h('strong', null, nxt.title), ' (' + (nxt.kind === 'test' ? nxt.questions + ' Fragen' : nxt.kind === 'write' ? 'Stift und Papier bereitlegen' : nxt.minutes + ' min') + ')'),
         h('button', { class: 'btn primary xl', onclick: function () {
           awaitingNext = false; timeUpShown = false;
           run.idx++; save(); renderPills(); renderClock(); renderStep();
@@ -287,6 +294,15 @@
     function renderStep() {
       var s = step();
       timeBanner.hidden = true;
+      if (s.kind === 'write') {
+        LP.writing.render(body, s, function (st) {
+          run.stats[run.idx].right += st.right; run.stats[run.idx].wrong += st.wrong;
+          addXp(st.right * L.XP.right);
+          save();
+          completeStep();
+        });
+        return;
+      }
       if (s.kind === 'break') {
         LP.clear(body);
         body.appendChild(h('div', { class: 'card center break-card' },
@@ -376,12 +392,12 @@
       var s = step();
       if (!s || awaitingNext) return;
       if (document.hidden) return;
-      if (!paused && s.kind !== 'break' && Date.now() - lastInput > idleLimit) {
+      if (!paused && s.kind !== 'break' && s.kind !== 'write' && Date.now() - lastInput > idleLimit) {
         paused = true; pauseOverlay.hidden = false;
       }
       if (paused) return;
       run.active[run.idx]++;
-      if (s.kind === 'test') { if (run.active[run.idx] % 5 === 0) save(); return; }
+      if (s.kind === 'test' || s.kind === 'write') { if (run.active[run.idx] % 5 === 0) save(); return; }
       if (run.remain[run.idx] > 0) {
         run.remain[run.idx]--;
         if (run.remain[run.idx] <= 0) {
@@ -395,7 +411,7 @@
 
     renderPills();
     renderClock();
-    if (run.remain[run.idx] <= 0 && step().kind !== 'test') completeStep(); else renderStep();
+    if (run.remain[run.idx] <= 0 && step().kind !== 'test' && step().kind !== 'write') completeStep(); else renderStep();
 
     return function cleanup() {
       clearInterval(tick);
@@ -452,7 +468,11 @@
         decks.length ? h('div', { class: 'deck-chips' }, decks.map(function (d) { return h('span', { class: 'chip' }, d.title); })) : h('p', { class: 'muted small' }, 'Noch keine Lerninhalte verknüpft.'),
         decks.length ? h('div', { class: 'row end' }, h('a', { class: 'btn primary', href: '#/lernzeit', onclick: function () {
           LP.startRun({ day: t, total: 15, steps: [{ id: 's0', kind: 'focus', title: s.name + ': ' + (e.title || 'Übung'), sub: 'Freies Üben', subjectId: e.subjectId, examId: e.id, deckIds: e.deckIds, minutes: 15 }] }, 'frei', e.title);
-        } }, svg(I.play), '15 min üben')) : null));
+        } }, svg(I.play), '15 min üben'),
+          decks.some(function (d) { return d.kind === 'vokabeln' && (d.cards || []).length >= 3; }) ? h('a', { class: 'btn ghost', href: '#/lernzeit', onclick: function () {
+            LP.startRun({ day: t, total: 6, steps: [{ id: 's0', kind: 'write', title: 'Schreibrunde', sub: 'Vokabeln auf Papier schreiben', subjectId: e.subjectId, examId: e.id,
+              deckIds: decks.filter(function (d) { return d.kind === 'vokabeln'; }).map(function (d) { return d.id; }), words: 10, minutes: 6 }] }, 'frei', 'Schreibrunde');
+          } }, svg(LP.writing.CAMERA), 'Schreibrunde') : null) : null));
     });
     el.appendChild(listEl);
 

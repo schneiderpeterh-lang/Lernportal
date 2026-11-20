@@ -9,4 +9,5 @@ services:
       - ./data:/app/data
     environment:
       - TZ=Europe/Berlin
-      # - PARENT_PIN=123456   # optional: Eltern-PIN fest vorgeben
+      # - PARENT_PIN=123456              # optional: Eltern-PIN fest vorgeben
+      # - ANTHROPIC_API_KEY=sk-ant-...    # optional: KI-Prüfung der Schreibrunden

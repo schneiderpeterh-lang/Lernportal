@@ -148,8 +148,8 @@
 
   /* ---------------------------------------------------------------- Speicher */
 
-  var COLS = ['settings', 'subjects', 'exams', 'decks', 'progress', 'sessions', 'rewards', 'redemptions', 'grades'];
-  var STUDENT_COLS = { progress: 1, sessions: 1, redemptions: 1 };
+  var COLS = ['settings', 'subjects', 'exams', 'decks', 'progress', 'sessions', 'rewards', 'redemptions', 'grades', 'writings'];
+  var STUDENT_COLS = { progress: 1, sessions: 1, redemptions: 1, writings: 1 };
 
   function emptyData() { var d = {}; COLS.forEach(function (c) { d[c] = {}; }); return d; }
 
@@ -157,6 +157,7 @@
     mode: window.LP_DEMO ? 'local' : 'remote',
     data: emptyData(),
     pinSet: false,
+    aiCheck: { available: false, reason: 'Demo-Version: Prüfung durch Selbstkontrolle' },
     token: null,
     online: true,
     listeners: [],
@@ -198,6 +199,7 @@
           });
           self.data = data;
           self.pinSet = res.pinSet;
+          self.aiCheck = res.aiCheck || { available: false, reason: 'Server zu alt' };
           if (self.token && !res.parent) { self.token = null; ssSet('lp_token', null); }
           self.online = true;
           lsSet('lp_cache', data);
@@ -331,6 +333,13 @@
       }
       return self.api('import', { data: data }).then(function () { return self.load(); }).then(function () { self.emit(); });
     },
+
+    // Schreibrunde: Foto hochladen, Server prüft (KI) oder meldet, dass selbst kontrolliert wird
+    uploadWriting: function (dataUrl, items) {
+      if (this.mode === 'local') return Promise.resolve({ photoId: null, results: null, reason: 'Demo-Version: Bitte selbst kontrollieren.' });
+      return this.api('writing', { image: dataUrl, items: items });
+    },
+    photoUrl: function (id) { return id && this.token ? 'api/foto/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(this.token) : null; },
 
     resetDemo: function () { lsDel('lp_demo_db'); lsDel('lp_run'); location.reload(); }
   };

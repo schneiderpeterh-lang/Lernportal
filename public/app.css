@@ -431,3 +431,33 @@ details.import summary { cursor: pointer; font-weight: 700; display: flex; align
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Schreibrunde */
+.visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.write-task .lead { font-size: 1.05rem; max-width: 62ch; }
+.write-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+.write-list li { display: flex; gap: 12px; align-items: baseline; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); font-size: 1.25rem; font-weight: 650; }
+.write-list .nr { color: var(--muted); min-width: 2ch; }
+@media (max-width: 640px) { .write-list { grid-template-columns: 1fr; } }
+.write-photo { display: block; max-width: 100%; max-height: 60vh; border-radius: 10px; border: 1px solid var(--line); margin: 0 auto; }
+.checking { display: flex; align-items: center; gap: 14px; padding: 24px 0; font-weight: 650; font-size: 1.1rem; }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--surface-2); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.write-results { display: flex; flex-direction: column; gap: 6px; }
+.wr-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border-left: 4px solid var(--line); }
+.wr-row.ok { border-left-color: var(--good); }
+.wr-row.bad { border-left-color: var(--bad); background: var(--bad-soft); }
+.wr-mark { width: 26px; height: 26px; flex: none; display: grid; place-items: center; }
+.wr-row.ok .wr-mark { color: var(--good); }
+.wr-row.bad .wr-mark { color: var(--bad); }
+.wr-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.wr-note { color: var(--bad); }
+.wr-buttons { display: flex; gap: 6px; flex: none; }
+.wr-buttons .btn { min-width: 48px; }
+.btn.rate.good-outline { border-color: var(--good); color: var(--good); }
+.strike { text-decoration: line-through; text-decoration-color: var(--bad); }
+.write-fix { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 1.15rem; }
+.write-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.write-thumb { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.write-thumb img, .write-thumb .no-photo { width: 100%; height: 90px; object-fit: cover; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); font-size: .8rem; }
+.write-detail { display: flex; flex-direction: column; gap: 10px; }

@@ -143,6 +143,8 @@
     }
     grid.appendChild(wc);
 
+    grid.appendChild(writingsCard());
+
     // Noten-Schnitt
     var gc = h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Notenschnitt'), h('a', { class: 'link', href: '#/eltern/noten' }, 'Noten verwalten')));
     LP.subjects().forEach(function (s) {
@@ -154,6 +156,35 @@
     });
     if (!store.list('grades').length) gc.appendChild(h('p', { class: 'muted' }, 'Noch keine Noten eingetragen. Mit Noten erkennt der Lernplan, welches Fach an freien Tagen Vorrang hat.'));
     grid.appendChild(gc);
+  }
+
+  function writingsCard() {
+    var ws = store.list('writings').sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 6);
+    var ai = store.aiCheck || {};
+    var c = h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Schreibrunden'),
+      h('span', { class: 'pill ' + (ai.available ? 'good' : 'muted-pill') }, ai.available ? 'KI-Prüfung aktiv' : 'Selbstkontrolle')));
+    if (!ws.length) c.appendChild(h('p', { class: 'muted' }, 'Noch keine Schreibrunde. Sie kommt automatisch in die Lernzeit, sobald ein Vokabeltest ansteht.'));
+    var grid = h('div', { class: 'write-thumbs' });
+    ws.forEach(function (w) {
+      var url = store.photoUrl(w.photoId);
+      grid.appendChild(h('button', { class: 'write-thumb', onclick: function () { showWriting(w); } },
+        url ? h('img', { src: url, alt: 'Blatt vom ' + LP.fmtDay(w.date), loading: 'lazy' }) : h('span', { class: 'no-photo' }, 'kein Foto'),
+        h('span', { class: 'small' }, h('strong', null, LP.fmtDay(w.date)), h('br'), w.right + '/' + (w.right + w.wrong) + ' richtig · ' + (w.mode === 'ki' ? 'KI' : 'selbst'))));
+    });
+    if (ws.length) c.appendChild(grid);
+    return c;
+  }
+
+  function showWriting(w) {
+    var url = store.photoUrl(w.photoId);
+    var body = h('div', { class: 'write-detail' },
+      url ? h('a', { href: url, target: '_blank', rel: 'noopener' }, h('img', { class: 'write-photo', src: url, alt: 'Foto des Blattes' })) : h('p', { class: 'muted' }, 'Kein Foto gespeichert.'),
+      h('p', { class: 'muted small' }, w.mode === 'ki' ? 'Von der KI geprüft' + (w.model ? ' (' + w.model + ')' : '') + '. Bei Zweifeln bitte selbst aufs Foto schauen.' : 'Vom Kind selbst kontrolliert.'),
+      h('div', { class: 'write-results' }, (w.items || []).map(function (it) {
+        return h('div', { class: 'wr-row ' + (it.ok ? 'ok' : 'bad') }, h('span', { class: 'wr-mark' }, svg(it.ok ? I.check : I.x)),
+          h('div', { class: 'wr-body' }, h('span', { class: 'muted small' }, it.prompt), h('span', null, it.read ? h('strong', null, it.read) : null, it.ok ? null : '  →  ' + it.answer), it.note ? h('span', { class: 'small wr-note' }, it.note) : null));
+      })));
+    ui.dialog({ title: 'Schreibrunde vom ' + LP.fmtDay(w.date), body: body, cancel: false, ok: 'Schließen' });
   }
 
   function tile(value, label, foot) {
@@ -606,6 +637,13 @@
     h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerntage'), dayBox),
     h('div', { class: 'row end' }, h('button', { class: 'btn primary', type: 'submit' }, 'Speichern')));
     el.appendChild(form);
+
+    var ai = store.aiCheck || {};
+    el.appendChild(h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Schreibrunden prüfen lassen'),
+      h('span', { class: 'pill ' + (ai.available ? 'good' : 'muted-pill') }, ai.available ? 'KI-Prüfung aktiv' : 'Aus')),
+      h('p', { class: 'muted small' }, ai.available
+        ? 'Fotos der Schreibrunden werden von Claude gelesen und geprüft' + (ai.model ? ' (' + ai.model + ')' : '') + '. Klappt das nicht, kontrolliert Ihr Kind selbst.'
+        : 'Ihr Kind kontrolliert die Schreibrunde selbst; Sie sehen jedes Blatt in der Übersicht. ' + (ai.reason || '') + ' Anleitung: README, Abschnitt „KI-Prüfung“.')));
 
     // Vorschau des heutigen Plans
     var plan = L.buildPlan(LP.today());

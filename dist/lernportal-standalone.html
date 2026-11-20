@@ -440,6 +440,36 @@ details.import summary { cursor: pointer; font-weight: 700; display: flex; align
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* ---------- Schreibrunde */
+.visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.write-task .lead { font-size: 1.05rem; max-width: 62ch; }
+.write-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+.write-list li { display: flex; gap: 12px; align-items: baseline; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); font-size: 1.25rem; font-weight: 650; }
+.write-list .nr { color: var(--muted); min-width: 2ch; }
+@media (max-width: 640px) { .write-list { grid-template-columns: 1fr; } }
+.write-photo { display: block; max-width: 100%; max-height: 60vh; border-radius: 10px; border: 1px solid var(--line); margin: 0 auto; }
+.checking { display: flex; align-items: center; gap: 14px; padding: 24px 0; font-weight: 650; font-size: 1.1rem; }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--surface-2); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.write-results { display: flex; flex-direction: column; gap: 6px; }
+.wr-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border-left: 4px solid var(--line); }
+.wr-row.ok { border-left-color: var(--good); }
+.wr-row.bad { border-left-color: var(--bad); background: var(--bad-soft); }
+.wr-mark { width: 26px; height: 26px; flex: none; display: grid; place-items: center; }
+.wr-row.ok .wr-mark { color: var(--good); }
+.wr-row.bad .wr-mark { color: var(--bad); }
+.wr-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.wr-note { color: var(--bad); }
+.wr-buttons { display: flex; gap: 6px; flex: none; }
+.wr-buttons .btn { min-width: 48px; }
+.btn.rate.good-outline { border-color: var(--good); color: var(--good); }
+.strike { text-decoration: line-through; text-decoration-color: var(--bad); }
+.write-fix { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 1.15rem; }
+.write-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.write-thumb { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); text-align: left; cursor: pointer; font: inherit; }
+.write-thumb img, .write-thumb .no-photo { width: 100%; height: 90px; object-fit: cover; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); font-size: .8rem; }
+.write-detail { display: flex; flex-direction: column; gap: 10px; }
+
 </style>
 </head>
 <body>
@@ -1005,8 +1035,8 @@ window.LP.LP_DEMO_BANNER = function () {
 
   /* ---------------------------------------------------------------- Speicher */
 
-  var COLS = ['settings', 'subjects', 'exams', 'decks', 'progress', 'sessions', 'rewards', 'redemptions', 'grades'];
-  var STUDENT_COLS = { progress: 1, sessions: 1, redemptions: 1 };
+  var COLS = ['settings', 'subjects', 'exams', 'decks', 'progress', 'sessions', 'rewards', 'redemptions', 'grades', 'writings'];
+  var STUDENT_COLS = { progress: 1, sessions: 1, redemptions: 1, writings: 1 };
 
   function emptyData() { var d = {}; COLS.forEach(function (c) { d[c] = {}; }); return d; }
 
@@ -1014,6 +1044,7 @@ window.LP.LP_DEMO_BANNER = function () {
     mode: window.LP_DEMO ? 'local' : 'remote',
     data: emptyData(),
     pinSet: false,
+    aiCheck: { available: false, reason: 'Demo-Version: Prüfung durch Selbstkontrolle' },
     token: null,
     online: true,
     listeners: [],
@@ -1055,6 +1086,7 @@ window.LP.LP_DEMO_BANNER = function () {
           });
           self.data = data;
           self.pinSet = res.pinSet;
+          self.aiCheck = res.aiCheck || { available: false, reason: 'Server zu alt' };
           if (self.token && !res.parent) { self.token = null; ssSet('lp_token', null); }
           self.online = true;
           lsSet('lp_cache', data);
@@ -1188,6 +1220,13 @@ window.LP.LP_DEMO_BANNER = function () {
       }
       return self.api('import', { data: data }).then(function () { return self.load(); }).then(function () { self.emit(); });
     },
+
+    // Schreibrunde: Foto hochladen, Server prüft (KI) oder meldet, dass selbst kontrolliert wird
+    uploadWriting: function (dataUrl, items) {
+      if (this.mode === 'local') return Promise.resolve({ photoId: null, results: null, reason: 'Demo-Version: Bitte selbst kontrollieren.' });
+      return this.api('writing', { image: dataUrl, items: items });
+    },
+    photoUrl: function (id) { return id && this.token ? 'api/foto/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(this.token) : null; },
 
     resetDemo: function () { lsDel('lp_demo_db'); lsDel('lp_run'); location.reload(); }
   };
@@ -1997,8 +2036,16 @@ window.LP.LP_DEMO_BANNER = function () {
   }
   function upcomingExams() {
     var t = LP.today();
+    var seen = {};
     return examList(t, LP.addDays(t, 120)).filter(function (e) { return !e.done && e.date >= t && stillAhead(e, t); })
-      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+      .filter(function (e) {
+        // bei wöchentlichen Terminen nur den nächsten anzeigen
+        if (!e.baseId) return true;
+        if (seen[e.baseId]) return false;
+        seen[e.baseId] = true;
+        return true;
+      });
   }
   // Prüfungen, auf die an einem Tag gelernt werden soll – nach Dringlichkeit sortiert
   function activeExams(day) {
@@ -2094,8 +2141,34 @@ window.LP.LP_DEMO_BANNER = function () {
     var testDecks = [];
     focus.forEach(function (f) { testDecks = testDecks.concat(f.deckIds); });
     steps.push({ kind: 'test', title: 'Mini-Test', sub: '5 Fragen zu heute', minutes: test, deckIds: testDecks, questions: 5 });
+    // Schreibrunde: Steht ein Vokabeltest an, werden die Vokabeln einmal auf Papier geschrieben
+    for (var si = 0; si < steps.length; si++) {
+      var fs = steps[si];
+      if (fs.kind !== 'focus' || fs.minutes < 10) continue;
+      var exam = fs.examId ? store.get('exams', String(fs.examId).split('__')[0]) : null;
+      var vocabIds = (fs.deckIds || []).filter(function (id) { var d = store.get('decks', id); return d && d.kind === 'vokabeln' && (d.cards || []).length >= 3; });
+      if (!vocabIds.length || !exam || exam.type !== 'vokabeltest') continue;
+      fs.minutes -= 6;
+      steps.splice(si, 0, { kind: 'write', title: 'Schreibrunde', sub: 'Vokabeln auf Papier schreiben', minutes: 6, deckIds: vocabIds, subjectId: fs.subjectId, examId: fs.examId, words: 10 });
+      break;
+    }
     steps.forEach(function (s, i) { s.id = 's' + i; });
     return { day: day, total: total, steps: steps, focusExams: act.map(function (a) { return a.exam.id; }) };
+  }
+
+  function writingCards(deckIds, n) {
+    var t = LP.today(), all = [];
+    (deckIds || []).forEach(function (id) {
+      var d = store.get('decks', id);
+      if (!d || d.kind !== 'vokabeln') return;
+      (d.cards || []).forEach(function (c) {
+        var p = prog(d.id, c.id);
+        var score = (p.box || 0) * 3 - (p.due && p.due <= t ? 4 : 0) + (p.wrong || 0) * -1 + Math.random() * 2;
+        all.push({ deck: d, card: c, score: score });
+      });
+    });
+    all.sort(function (a, b) { return a.score - b.score; });
+    return all.slice(0, n || 10);
   }
 
   function isLearningDay(day) {
@@ -2147,7 +2220,7 @@ window.LP.LP_DEMO_BANNER = function () {
     prog: prog, grade: grade, deckMastery: deckMastery, examReadiness: examReadiness, dueCount: dueCount,
     mathRate: mathRate, markRead: markRead, lastRead: lastRead,
     Engine: Engine,
-    examPrepDays: examPrepDays, examList: examList, nextOccurrence: nextOccurrence, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
+    examPrepDays: examPrepDays, writingCards: writingCards, examList: examList, nextOccurrence: nextOccurrence, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
     totalXp: totalXp, balance: balance, level: level, streak: streak, doneToday: doneToday, doneDays: doneDays, minutesOn: minutesOn,
     XP: XP
   };
@@ -2491,6 +2564,218 @@ window.LP.LP_DEMO_BANNER = function () {
   LP.ui = { mathText: mathText, markdown: markdown, progressBar: progressBar, subjectChip: subjectChip, dialog: dialog, renderItem: renderItem, beep: beep, FIGS: FIGS };
 })();
 
+/* js/writing.js */
+/*
+ * Schreibrunde: Vokabeln auf Papier schreiben, Blatt fotografieren, prüfen lassen.
+ * Ablauf: Wörter anzeigen -> Foto -> KI-Prüfung (Server) oder Selbstkontrolle -> Fehler 3x abschreiben.
+ */
+(function () {
+  'use strict';
+  var LP = window.LP, h = LP.h, svg = LP.svg, I = LP.I, store = LP.store, L = LP.learn;
+
+  var CAMERA = '<svg viewBox="0 0 24 24"><path d="M4 8.5h3l1.5-2.5h7L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>';
+  var PEN = '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>';
+
+  // Foto verkleinern (spart Upload-Zeit und KI-Kosten), Ergebnis als JPEG-Data-URL
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error('Foto konnte nicht gelesen werden.')); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('Das ist kein Foto.')); };
+        img.onload = function () {
+          var max = 1600, w = img.naturalWidth, hgt = img.naturalHeight;
+          var f = Math.min(1, max / Math.max(w, hgt));
+          var c = document.createElement('canvas');
+          c.width = Math.round(w * f); c.height = Math.round(hgt * f);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function cameraButton(label, onPhoto, cls) {
+    var input = h('input', { type: 'file', accept: 'image/*', capture: 'environment', class: 'visually-hidden', 'aria-label': label });
+    input.addEventListener('change', function () {
+      var f = input.files && input.files[0];
+      input.value = '';
+      if (f) onPhoto(f);
+    });
+    return h('label', { class: 'btn ' + (cls || 'primary big') + ' file-btn' }, svg(CAMERA), label, input);
+  }
+
+  function render(host, step, done) {
+    var picks = L.writingCards(step.deckIds, step.words || 10);
+    var items = picks.map(function (p, i) {
+      return { nr: i + 1, deck: p.deck, card: p.card, prompt: p.card.b, answer: p.card.a };
+    });
+    var subj = LP.subject(step.subjectId || (picks[0] && picks[0].deck.subjectId));
+    var photo = null, photoId = null;
+
+    function card() {
+      LP.clear(host);
+      var c = h('div', { class: 'task write-task', style: { '--c': subj.color } });
+      host.appendChild(c);
+      c.appendChild(h('div', { class: 'task-meta' }, h('span', { class: 'dot' }), subj.name + ' · Schreibrunde'));
+      return c;
+    }
+
+    if (!items.length) {
+      var c0 = card();
+      c0.appendChild(h('p', null, 'Keine Vokabeln zum Schreiben gefunden.'));
+      c0.appendChild(h('div', { class: 'row end' }, h('button', { class: 'btn primary', onclick: function () { done({ right: 0, wrong: 0 }); } }, 'Weiter')));
+      return;
+    }
+
+    /* ---------- 1. Aufschreiben */
+    function phaseWrite() {
+      var c = card();
+      c.appendChild(h('div', { class: 'label' }, svg(PEN), 'Nimm ein Blatt Papier und einen Stift'));
+      c.appendChild(h('p', { class: 'lead' }, 'Schreib zu jeder Nummer das ', h('strong', null, 'englische'), ' Wort auf – mit Nummer davor. Die Lösungen siehst du erst nach dem Foto.'));
+      var ol = h('ol', { class: 'write-list' });
+      items.forEach(function (it) { ol.appendChild(h('li', null, h('span', { class: 'nr tabular' }, it.nr + '.'), h('span', null, it.prompt))); });
+      c.appendChild(ol);
+      c.appendChild(h('p', { class: 'muted small' }, 'Tipp: deutlich schreiben, Blatt flach hinlegen, gutes Licht. Fotografiere nur das Blatt.'));
+      c.appendChild(h('div', { class: 'row end' }, cameraButton('Fertig – Blatt fotografieren', phasePreview)));
+    }
+
+    /* ---------- 2. Vorschau */
+    function phasePreview(file) {
+      var c = card();
+      c.appendChild(h('p', { class: 'muted' }, 'Foto wird vorbereitet …'));
+      shrink(file).then(function (dataUrl) {
+        photo = dataUrl;
+        c = card();
+        c.appendChild(h('div', { class: 'label' }, 'Ist alles gut lesbar?'));
+        c.appendChild(h('img', { class: 'write-photo', src: dataUrl, alt: 'Foto deines Blattes' }));
+        c.appendChild(h('div', { class: 'row end' },
+          cameraButton('Neu aufnehmen', phasePreview, 'ghost'),
+          h('button', { class: 'btn primary big', onclick: phaseCheck }, svg(I.check), 'Foto verwenden')));
+      }, function (err) {
+        LP.toast(err.message, 'warn');
+        phaseWrite();
+      });
+    }
+
+    /* ---------- 3. Prüfen */
+    function phaseCheck() {
+      var c = card();
+      c.appendChild(h('div', { class: 'checking' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }),
+        h('span', null, store.aiCheck && store.aiCheck.available ? 'Dein Blatt wird geprüft …' : 'Foto wird gespeichert …')));
+      store.uploadWriting(photo, items.map(function (it) { return { prompt: it.prompt, answer: it.answer }; }))
+        .then(function (res) {
+          photoId = res.photoId || null;
+          if (res.results && res.legible === false) return phaseUnreadable(res.comment);
+          if (res.results) return phaseAiResult(res);
+          phaseSelfCheck(res.reason);
+        }, function () {
+          phaseSelfCheck('Keine Verbindung zum Server – bitte selbst kontrollieren.');
+        });
+    }
+
+    var retried = false;
+    function phaseUnreadable(comment) {
+      var c = card();
+      c.appendChild(h('div', { class: 'fb mid' }, 'Das Foto ist nicht gut lesbar.' + (comment ? ' ' + comment : '')));
+      if (!retried) {
+        retried = true;
+        c.appendChild(h('div', { class: 'row end' }, cameraButton('Noch einmal fotografieren', phasePreview)));
+      } else {
+        phaseSelfCheck('Auch das zweite Foto war nicht lesbar – bitte selbst kontrollieren.');
+      }
+    }
+
+    /* ---------- 4a. Ergebnis der KI */
+    function phaseAiResult(res) {
+      items.forEach(function (it, i) { var r = res.results[i] || {}; it.read = r.read || ''; it.ok = Boolean(r.correct); it.note = r.note || ''; });
+      var c = card();
+      var right = items.filter(function (it) { return it.ok; }).length;
+      c.appendChild(h('h2', null, right + ' von ' + items.length + ' richtig'));
+      if (res.comment) c.appendChild(h('p', { class: 'muted' }, res.comment));
+      c.appendChild(resultTable(false));
+      c.appendChild(h('p', { class: 'muted small' }, 'Geprüft von einer KI. Deine Eltern sehen dein Blatt.'));
+      c.appendChild(h('div', { class: 'row end' }, h('button', { class: 'btn primary big', onclick: function () { finish('ki', res.model); } }, 'Weiter')));
+    }
+
+    /* ---------- 4b. Selbstkontrolle */
+    function phaseSelfCheck(reason) {
+      items.forEach(function (it) { it.ok = null; it.read = ''; });
+      var c = card();
+      c.appendChild(h('h2', null, 'Jetzt selbst kontrollieren'));
+      c.appendChild(h('p', { class: 'muted' }, (reason ? reason + ' ' : '') + 'Vergleiche dein Blatt mit den Lösungen und sei ehrlich – ein Rechtschreibfehler zählt als falsch.'));
+      var table = resultTable(true);
+      c.appendChild(table);
+      var go = h('button', { class: 'btn primary big', disabled: true, onclick: function () { finish('selbst'); } }, 'Auswerten');
+      table.addEventListener('click', function () {
+        setTimeout(function () { go.disabled = items.some(function (it) { return it.ok === null; }); }, 0);
+      });
+      c.appendChild(h('div', { class: 'row end' }, go));
+    }
+
+    function resultTable(selfMode) {
+      var t = h('div', { class: 'write-results' });
+      items.forEach(function (it) {
+        var row = h('div', { class: 'wr-row' + (it.ok === true ? ' ok' : it.ok === false ? ' bad' : '') });
+        var mark = h('span', { class: 'wr-mark' }, it.ok === true ? svg(I.check) : it.ok === false ? svg(I.x) : null);
+        var body = h('div', { class: 'wr-body' },
+          h('span', { class: 'muted small' }, it.nr + '. ' + it.prompt),
+          selfMode ? h('strong', null, it.answer) :
+            h('span', null, h('strong', { class: it.ok ? '' : 'strike' }, it.read || '(nichts gefunden)'), it.ok ? null : h('span', null, '  →  ', h('strong', null, it.answer))),
+          it.note && !selfMode ? h('span', { class: 'small wr-note' }, it.note) : null);
+        row.appendChild(mark);
+        row.appendChild(body);
+        if (selfMode) {
+          var yes = h('button', { class: 'btn small rate good-outline', 'aria-label': 'Richtig geschrieben' }, svg(I.check));
+          var no = h('button', { class: 'btn small rate bad', 'aria-label': 'Falsch geschrieben' }, svg(I.x));
+          yes.addEventListener('click', function () { it.ok = true; row.className = 'wr-row ok'; LP.clear(mark).appendChild(svg(I.check)); });
+          no.addEventListener('click', function () { it.ok = false; row.className = 'wr-row bad'; LP.clear(mark).appendChild(svg(I.x)); });
+          row.appendChild(h('div', { class: 'wr-buttons' }, no, yes));
+        }
+        t.appendChild(row);
+      });
+      return t;
+    }
+
+    /* ---------- 5. Fehler verbessern und abschließen */
+    function finish(mode, model) {
+      var wrong = items.filter(function (it) { return !it.ok; });
+      items.forEach(function (it) { L.grade(it.deck.id, it.card.id, it.ok ? 'right' : 'wrong'); });
+      store.put('writings', {
+        id: LP.uid('w'), date: LP.today(), at: Date.now(), photoId: photoId, mode: mode, model: model || null,
+        examId: step.examId || null, right: items.length - wrong.length, wrong: wrong.length,
+        items: items.map(function (it) { return { prompt: it.prompt, answer: it.answer, read: it.read || '', ok: Boolean(it.ok), note: it.note || '' }; })
+      });
+      var stats = { right: items.length - wrong.length, wrong: wrong.length };
+      if (!wrong.length) {
+        var c1 = card();
+        c1.appendChild(h('div', { class: 'big-check' }, svg(I.check)));
+        c1.appendChild(h('h2', null, 'Alles richtig geschrieben!'));
+        c1.appendChild(h('div', { class: 'row end' }, h('button', { class: 'btn primary big', onclick: function () { done(stats); } }, 'Weiter')));
+        return;
+      }
+      var c = card();
+      c.appendChild(h('h2', null, 'Jetzt verbessern'));
+      c.appendChild(h('p', null, 'Schreib diese Wörter ', h('strong', null, 'je dreimal richtig'), ' unter deine Liste:'));
+      c.appendChild(h('ul', { class: 'write-fix' }, wrong.map(function (it) { return h('li', null, h('span', { class: 'muted' }, it.prompt + ' – '), h('strong', null, it.answer)); })));
+      var wait = Math.min(60, wrong.length * 8), btn = h('button', { class: 'btn primary big', disabled: true, onclick: function () { done(stats); } }, 'Erledigt (' + wait + ')');
+      c.appendChild(h('div', { class: 'row end' }, btn));
+      var iv = setInterval(function () {
+        wait--;
+        if (!document.body.contains(btn)) { clearInterval(iv); return; }
+        if (wait <= 0) { clearInterval(iv); btn.disabled = false; btn.textContent = 'Erledigt'; } else btn.textContent = 'Erledigt (' + wait + ')';
+      }, 1000);
+    }
+
+    phaseWrite();
+  }
+
+  LP.writing = { render: render, CAMERA: CAMERA };
+})();
+
 /* js/student.js */
 /*
  * Schüler-Ansichten: Heute, Lernzeit (geführte Sitzung), Termine, Training, Fortschritt.
@@ -2504,7 +2789,7 @@ window.LP.LP_DEMO_BANNER = function () {
     return h('header', { class: 'page-head' }, h('div', null, h('h1', null, title), sub ? h('p', { class: 'muted' }, sub) : null), right || null);
   }
   function stepIcon(kind) {
-    return { review: I.bolt, focus: I.target, break: I.coffee, test: I.check }[kind] || I.target;
+    return { review: I.bolt, focus: I.target, break: I.coffee, test: I.check, write: LP.writing.CAMERA }[kind] || I.target;
   }
   function greeting() {
     var hr = new Date().getHours();
@@ -2693,6 +2978,13 @@ window.LP.LP_DEMO_BANNER = function () {
       if (!s) return;
       var total = s.minutes * 60;
       var rem = run.remain[run.idx];
+      if (s.kind === 'write') {
+        clockLabel.textContent = s.title + ' · ' + s.sub;
+        clock.textContent = '';
+        bar.firstChild.style.width = '0%';
+        root.style.setProperty('--c', s.subjectId ? LP.subject(s.subjectId).color : 'var(--accent)');
+        return;
+      }
       if (s.kind === 'test') {
         clockLabel.textContent = s.title + ' · Frage ' + Math.min(run.testDone + 1, s.questions) + ' von ' + s.questions;
         clock.textContent = '';
@@ -2753,7 +3045,7 @@ window.LP.LP_DEMO_BANNER = function () {
     function completeStep() {
       var s = step();
       if (!s) return;
-      var bonus = (s.kind === 'review' || s.kind === 'focus') ? L.XP.block : 0;
+      var bonus = (s.kind === 'review' || s.kind === 'focus' || s.kind === 'write') ? L.XP.block : 0;
       if (bonus && !run.blockXp[run.idx]) { run.blockXp[run.idx] = true; addXp(bonus); }
       run.remain[run.idx] = 0;
       ui.beep('step');
@@ -2769,7 +3061,7 @@ window.LP.LP_DEMO_BANNER = function () {
         h('div', { class: 'big-check' }, svg(I.check)),
         h('h2', null, s.kind === 'break' ? 'Pause vorbei' : s.title + ' geschafft!'),
         s.kind !== 'break' ? h('p', { class: 'muted tabular' }, stats.right + ' richtig · ' + stats.wrong + ' falsch' + (bonus ? ' · +' + bonus + ' Bonuspunkte' : '')) : null,
-        h('p', null, 'Als Nächstes: ', h('strong', null, nxt.title), ' (' + (nxt.kind === 'test' ? nxt.questions + ' Fragen' : nxt.minutes + ' min') + ')'),
+        h('p', null, 'Als Nächstes: ', h('strong', null, nxt.title), ' (' + (nxt.kind === 'test' ? nxt.questions + ' Fragen' : nxt.kind === 'write' ? 'Stift und Papier bereitlegen' : nxt.minutes + ' min') + ')'),
         h('button', { class: 'btn primary xl', onclick: function () {
           awaitingNext = false; timeUpShown = false;
           run.idx++; save(); renderPills(); renderClock(); renderStep();
@@ -2781,6 +3073,15 @@ window.LP.LP_DEMO_BANNER = function () {
     function renderStep() {
       var s = step();
       timeBanner.hidden = true;
+      if (s.kind === 'write') {
+        LP.writing.render(body, s, function (st) {
+          run.stats[run.idx].right += st.right; run.stats[run.idx].wrong += st.wrong;
+          addXp(st.right * L.XP.right);
+          save();
+          completeStep();
+        });
+        return;
+      }
       if (s.kind === 'break') {
         LP.clear(body);
         body.appendChild(h('div', { class: 'card center break-card' },
@@ -2870,12 +3171,12 @@ window.LP.LP_DEMO_BANNER = function () {
       var s = step();
       if (!s || awaitingNext) return;
       if (document.hidden) return;
-      if (!paused && s.kind !== 'break' && Date.now() - lastInput > idleLimit) {
+      if (!paused && s.kind !== 'break' && s.kind !== 'write' && Date.now() - lastInput > idleLimit) {
         paused = true; pauseOverlay.hidden = false;
       }
       if (paused) return;
       run.active[run.idx]++;
-      if (s.kind === 'test') { if (run.active[run.idx] % 5 === 0) save(); return; }
+      if (s.kind === 'test' || s.kind === 'write') { if (run.active[run.idx] % 5 === 0) save(); return; }
       if (run.remain[run.idx] > 0) {
         run.remain[run.idx]--;
         if (run.remain[run.idx] <= 0) {
@@ -2889,7 +3190,7 @@ window.LP.LP_DEMO_BANNER = function () {
 
     renderPills();
     renderClock();
-    if (run.remain[run.idx] <= 0 && step().kind !== 'test') completeStep(); else renderStep();
+    if (run.remain[run.idx] <= 0 && step().kind !== 'test' && step().kind !== 'write') completeStep(); else renderStep();
 
     return function cleanup() {
       clearInterval(tick);
@@ -2946,7 +3247,11 @@ window.LP.LP_DEMO_BANNER = function () {
         decks.length ? h('div', { class: 'deck-chips' }, decks.map(function (d) { return h('span', { class: 'chip' }, d.title); })) : h('p', { class: 'muted small' }, 'Noch keine Lerninhalte verknüpft.'),
         decks.length ? h('div', { class: 'row end' }, h('a', { class: 'btn primary', href: '#/lernzeit', onclick: function () {
           LP.startRun({ day: t, total: 15, steps: [{ id: 's0', kind: 'focus', title: s.name + ': ' + (e.title || 'Übung'), sub: 'Freies Üben', subjectId: e.subjectId, examId: e.id, deckIds: e.deckIds, minutes: 15 }] }, 'frei', e.title);
-        } }, svg(I.play), '15 min üben')) : null));
+        } }, svg(I.play), '15 min üben'),
+          decks.some(function (d) { return d.kind === 'vokabeln' && (d.cards || []).length >= 3; }) ? h('a', { class: 'btn ghost', href: '#/lernzeit', onclick: function () {
+            LP.startRun({ day: t, total: 6, steps: [{ id: 's0', kind: 'write', title: 'Schreibrunde', sub: 'Vokabeln auf Papier schreiben', subjectId: e.subjectId, examId: e.id,
+              deckIds: decks.filter(function (d) { return d.kind === 'vokabeln'; }).map(function (d) { return d.id; }), words: 10, minutes: 6 }] }, 'frei', 'Schreibrunde');
+          } }, svg(LP.writing.CAMERA), 'Schreibrunde') : null) : null));
     });
     el.appendChild(listEl);
 
@@ -3280,6 +3585,8 @@ window.LP.LP_DEMO_BANNER = function () {
     }
     grid.appendChild(wc);
 
+    grid.appendChild(writingsCard());
+
     // Noten-Schnitt
     var gc = h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Notenschnitt'), h('a', { class: 'link', href: '#/eltern/noten' }, 'Noten verwalten')));
     LP.subjects().forEach(function (s) {
@@ -3291,6 +3598,35 @@ window.LP.LP_DEMO_BANNER = function () {
     });
     if (!store.list('grades').length) gc.appendChild(h('p', { class: 'muted' }, 'Noch keine Noten eingetragen. Mit Noten erkennt der Lernplan, welches Fach an freien Tagen Vorrang hat.'));
     grid.appendChild(gc);
+  }
+
+  function writingsCard() {
+    var ws = store.list('writings').sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 6);
+    var ai = store.aiCheck || {};
+    var c = h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Schreibrunden'),
+      h('span', { class: 'pill ' + (ai.available ? 'good' : 'muted-pill') }, ai.available ? 'KI-Prüfung aktiv' : 'Selbstkontrolle')));
+    if (!ws.length) c.appendChild(h('p', { class: 'muted' }, 'Noch keine Schreibrunde. Sie kommt automatisch in die Lernzeit, sobald ein Vokabeltest ansteht.'));
+    var grid = h('div', { class: 'write-thumbs' });
+    ws.forEach(function (w) {
+      var url = store.photoUrl(w.photoId);
+      grid.appendChild(h('button', { class: 'write-thumb', onclick: function () { showWriting(w); } },
+        url ? h('img', { src: url, alt: 'Blatt vom ' + LP.fmtDay(w.date), loading: 'lazy' }) : h('span', { class: 'no-photo' }, 'kein Foto'),
+        h('span', { class: 'small' }, h('strong', null, LP.fmtDay(w.date)), h('br'), w.right + '/' + (w.right + w.wrong) + ' richtig · ' + (w.mode === 'ki' ? 'KI' : 'selbst'))));
+    });
+    if (ws.length) c.appendChild(grid);
+    return c;
+  }
+
+  function showWriting(w) {
+    var url = store.photoUrl(w.photoId);
+    var body = h('div', { class: 'write-detail' },
+      url ? h('a', { href: url, target: '_blank', rel: 'noopener' }, h('img', { class: 'write-photo', src: url, alt: 'Foto des Blattes' })) : h('p', { class: 'muted' }, 'Kein Foto gespeichert.'),
+      h('p', { class: 'muted small' }, w.mode === 'ki' ? 'Von der KI geprüft' + (w.model ? ' (' + w.model + ')' : '') + '. Bei Zweifeln bitte selbst aufs Foto schauen.' : 'Vom Kind selbst kontrolliert.'),
+      h('div', { class: 'write-results' }, (w.items || []).map(function (it) {
+        return h('div', { class: 'wr-row ' + (it.ok ? 'ok' : 'bad') }, h('span', { class: 'wr-mark' }, svg(it.ok ? I.check : I.x)),
+          h('div', { class: 'wr-body' }, h('span', { class: 'muted small' }, it.prompt), h('span', null, it.read ? h('strong', null, it.read) : null, it.ok ? null : '  →  ' + it.answer), it.note ? h('span', { class: 'small wr-note' }, it.note) : null));
+      })));
+    ui.dialog({ title: 'Schreibrunde vom ' + LP.fmtDay(w.date), body: body, cancel: false, ok: 'Schließen' });
   }
 
   function tile(value, label, foot) {
@@ -3743,6 +4079,13 @@ window.LP.LP_DEMO_BANNER = function () {
     h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerntage'), dayBox),
     h('div', { class: 'row end' }, h('button', { class: 'btn primary', type: 'submit' }, 'Speichern')));
     el.appendChild(form);
+
+    var ai = store.aiCheck || {};
+    el.appendChild(h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Schreibrunden prüfen lassen'),
+      h('span', { class: 'pill ' + (ai.available ? 'good' : 'muted-pill') }, ai.available ? 'KI-Prüfung aktiv' : 'Aus')),
+      h('p', { class: 'muted small' }, ai.available
+        ? 'Fotos der Schreibrunden werden von Claude gelesen und geprüft' + (ai.model ? ' (' + ai.model + ')' : '') + '. Klappt das nicht, kontrolliert Ihr Kind selbst.'
+        : 'Ihr Kind kontrolliert die Schreibrunde selbst; Sie sehen jedes Blatt in der Übersicht. ' + (ai.reason || '') + ' Anleitung: README, Abschnitt „KI-Prüfung“.')));
 
     // Vorschau des heutigen Plans
     var plan = L.buildPlan(LP.today());

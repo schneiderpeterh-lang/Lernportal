@@ -5,7 +5,8 @@
  *  - liefert die Web-App aus (public/)
  *  - speichert alle Daten in data/db.json (atomar, mit täglichem Backup)
  *  - Eltern-Bereich ist per PIN geschützt (scrypt-Hash, Sperre nach Fehlversuchen)
- *  - der Schüler darf nur Lernfortschritt, Sitzungen und Belohnungswünsche schreiben
+ *  - der Schüler darf nur Lernfortschritt, Sitzungen, Schreibrunden und Belohnungswünsche schreiben
+ *  - optional: Schreibrunden-Fotos werden von Claude geprüft (ANTHROPIC_API_KEY setzen, `npm install`)
  *
  * Start:  node server.js        (Port 3000, ändern mit PORT=8080)
  */
@@ -23,15 +24,20 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const AUTH_FILE = path.join(DATA_DIR, 'auth.json');
 const BACKUP_DIR = path.join(DATA_DIR, 'backups');
+const PHOTO_DIR = path.join(DATA_DIR, 'fotos');
 const BACKUP_KEEP = 30;
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
-const MAX_BODY = 5 * 1024 * 1024;
+const MAX_BODY = 8 * 1024 * 1024;
+const MAX_PHOTO = 4 * 1024 * 1024;
 
-const COLLECTIONS = ['settings', 'subjects', 'exams', 'decks', 'progress', 'sessions', 'rewards', 'redemptions', 'grades'];
-const STUDENT_WRITABLE = new Set(['progress', 'sessions', 'redemptions']);
+const COLLECTIONS = ['settings', 'subjects', 'exams', 'decks', 'progress', 'sessions', 'rewards', 'redemptions', 'grades', 'writings'];
+const STUDENT_WRITABLE = new Set(['progress', 'sessions', 'redemptions', 'writings']);
 const ID_RE = /^[A-Za-z0-9_\-]{1,100}$/;
 
 fs.mkdirSync(BACKUP_DIR, { recursive: true });
+fs.mkdirSync(PHOTO_DIR, { recursive: true });
+
+const writingCheck = require('./lib/writing-check');
 
 /* ------------------------------------------------------------------ Daten */
 
@@ -168,6 +174,8 @@ const MIME = {
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain; charset=utf-8'
 };
@@ -225,7 +233,7 @@ async function handleApi(req, res, parts) {
   const route = parts[0];
 
   if (route === 'state' && method === 'GET') {
-    return send(res, 200, { data: db, pinSet: pinIsSet(), parent: isParent(req), serverTime: Date.now() });
+    return send(res, 200, { data: db, pinSet: pinIsSet(), parent: isParent(req), serverTime: Date.now(), aiCheck: writingCheck.status() });
   }
 
   if (route === 'setup' && method === 'POST') {
@@ -279,6 +287,42 @@ async function handleApi(req, res, parts) {
     return send(res, 200, { ok: true });
   }
 
+  // Schreibrunde: Foto speichern und (falls eingerichtet) von Claude prüfen lassen
+  if (route === 'writing' && method === 'POST') {
+    const body = await readBody(req);
+    const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(body.image || ''));
+    if (!m) return send(res, 400, { error: 'Kein gültiges Foto.' });
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length > MAX_PHOTO) return send(res, 413, { error: 'Foto ist zu groß.' });
+    const items = Array.isArray(body.items) ? body.items.slice(0, 30).map((it, i) => ({
+      nr: i + 1, prompt: String(it.prompt || '').slice(0, 200), answer: String(it.answer || '').slice(0, 200)
+    })) : [];
+    if (!items.length) return send(res, 400, { error: 'Keine Vokabeln übergeben.' });
+    const photoId = 'f' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex');
+    const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+    fs.writeFileSync(path.join(PHOTO_DIR, photoId + '.' + ext), buf);
+    if (!writingCheck.status().available) return send(res, 200, { photoId, results: null, reason: writingCheck.status().reason });
+    try {
+      const check = await writingCheck.check(buf.toString('base64'), 'image/' + m[1], items);
+      return send(res, 200, { photoId, results: check.results, legible: check.legible, comment: check.comment, model: check.model });
+    } catch (err) {
+      console.error('KI-Prüfung fehlgeschlagen:', err.message);
+      return send(res, 200, { photoId, results: null, reason: 'Die KI-Prüfung hat gerade nicht geklappt. Bitte selbst kontrollieren.' });
+    }
+  }
+
+  // Fotos nur für Eltern (Token als Parameter, weil <img> keine Header schicken kann)
+  if (route === 'foto' && method === 'GET') {
+    const id = parts[1] || '';
+    const tok = new URL(req.url, 'http://x').searchParams.get('t');
+    if (!tok || !tokens.has(tok) || tokens.get(tok) < Date.now()) return send(res, 401, { error: 'Nur für Eltern.' });
+    if (!/^f[a-z0-9]{6,40}$/.test(id)) return send(res, 400, { error: 'Ungültig.' });
+    const file = ['jpg', 'png', 'webp'].map((e) => path.join(PHOTO_DIR, id + '.' + e)).find((f) => fs.existsSync(f));
+    if (!file) return send(res, 404, { error: 'Foto nicht gefunden.' });
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'image/jpeg', 'Cache-Control': 'private, max-age=86400' });
+    return fs.createReadStream(file).pipe(res);
+  }
+
   if (route === 'c') {
     const col = parts[1];
     const id = parts[2];
@@ -322,6 +366,8 @@ server.listen(PORT, HOST, () => {
   console.log('  Auf diesem Rechner:  http://localhost:' + PORT);
   ips.forEach((ip) => console.log('  Im Heimnetz/Tablet:  http://' + ip + ':' + PORT));
   if (!pinIsSet()) console.log('  Hinweis: Noch keine Eltern-PIN gesetzt – beim ersten Öffnen des Eltern-Bereichs festlegen.');
+  const ai = writingCheck.status();
+  console.log('  KI-Prüfung der Schreibrunden: ' + (ai.available ? 'aktiv (' + ai.model + ')' : 'aus – ' + ai.reason));
 });
 
 function shutdown() { saveNow(); process.exit(0); }

@@ -1,6 +1,9 @@
 FROM node:22-alpine
 WORKDIR /app
-COPY server.js package.json ./
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY server.js ./
+COPY lib ./lib
 COPY public ./public
 ENV PORT=3000 DATA_DIR=/app/data
 EXPOSE 3000

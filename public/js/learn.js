@@ -281,8 +281,16 @@
   }
   function upcomingExams() {
     var t = LP.today();
+    var seen = {};
     return examList(t, LP.addDays(t, 120)).filter(function (e) { return !e.done && e.date >= t && stillAhead(e, t); })
-      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })
+      .filter(function (e) {
+        // bei wöchentlichen Terminen nur den nächsten anzeigen
+        if (!e.baseId) return true;
+        if (seen[e.baseId]) return false;
+        seen[e.baseId] = true;
+        return true;
+      });
   }
   // Prüfungen, auf die an einem Tag gelernt werden soll – nach Dringlichkeit sortiert
   function activeExams(day) {
@@ -378,8 +386,34 @@
     var testDecks = [];
     focus.forEach(function (f) { testDecks = testDecks.concat(f.deckIds); });
     steps.push({ kind: 'test', title: 'Mini-Test', sub: '5 Fragen zu heute', minutes: test, deckIds: testDecks, questions: 5 });
+    // Schreibrunde: Steht ein Vokabeltest an, werden die Vokabeln einmal auf Papier geschrieben
+    for (var si = 0; si < steps.length; si++) {
+      var fs = steps[si];
+      if (fs.kind !== 'focus' || fs.minutes < 10) continue;
+      var exam = fs.examId ? store.get('exams', String(fs.examId).split('__')[0]) : null;
+      var vocabIds = (fs.deckIds || []).filter(function (id) { var d = store.get('decks', id); return d && d.kind === 'vokabeln' && (d.cards || []).length >= 3; });
+      if (!vocabIds.length || !exam || exam.type !== 'vokabeltest') continue;
+      fs.minutes -= 6;
+      steps.splice(si, 0, { kind: 'write', title: 'Schreibrunde', sub: 'Vokabeln auf Papier schreiben', minutes: 6, deckIds: vocabIds, subjectId: fs.subjectId, examId: fs.examId, words: 10 });
+      break;
+    }
     steps.forEach(function (s, i) { s.id = 's' + i; });
     return { day: day, total: total, steps: steps, focusExams: act.map(function (a) { return a.exam.id; }) };
+  }
+
+  function writingCards(deckIds, n) {
+    var t = LP.today(), all = [];
+    (deckIds || []).forEach(function (id) {
+      var d = store.get('decks', id);
+      if (!d || d.kind !== 'vokabeln') return;
+      (d.cards || []).forEach(function (c) {
+        var p = prog(d.id, c.id);
+        var score = (p.box || 0) * 3 - (p.due && p.due <= t ? 4 : 0) + (p.wrong || 0) * -1 + Math.random() * 2;
+        all.push({ deck: d, card: c, score: score });
+      });
+    });
+    all.sort(function (a, b) { return a.score - b.score; });
+    return all.slice(0, n || 10);
   }
 
   function isLearningDay(day) {
@@ -431,7 +465,7 @@
     prog: prog, grade: grade, deckMastery: deckMastery, examReadiness: examReadiness, dueCount: dueCount,
     mathRate: mathRate, markRead: markRead, lastRead: lastRead,
     Engine: Engine,
-    examPrepDays: examPrepDays, examList: examList, nextOccurrence: nextOccurrence, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
+    examPrepDays: examPrepDays, writingCards: writingCards, examList: examList, nextOccurrence: nextOccurrence, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
     totalXp: totalXp, balance: balance, level: level, streak: streak, doneToday: doneToday, doneDays: doneDays, minutesOn: minutesOn,
     XP: XP
   };
