@@ -13,6 +13,16 @@ RUN_USER="$(id -un)"
 ENV_FILE=/etc/lernportal.env
 SERVICE=/etc/systemd/system/lernportal.service
 
+ARCH="$(uname -m)"
+case "$ARCH" in
+  aarch64|x86_64) ;;
+  armv6l)
+    echo "Dieses Gerät (z. B. der erste Raspberry Pi Zero) ist zu alt für aktuelles Node.js. Ein Pi Zero 2, 3, 4 oder 5 funktioniert."
+    exit 1 ;;
+  armv7l)
+    echo "Hinweis: 32-Bit-System erkannt. Empfohlen ist Raspberry Pi OS Lite (64-bit) – bei Problemen bitte das 64-Bit-System neu aufspielen." ;;
+esac
+
 echo "Lernportal-Ordner: $APP_DIR"
 echo "Läuft als Benutzer: $RUN_USER"
 

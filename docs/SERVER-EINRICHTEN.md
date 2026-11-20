@@ -11,6 +11,7 @@ Sie wird aber gebraucht, um dem Server eine feste Adresse zu geben (Schritt 4).
 | Gerät | Geeignet? | Bemerkung |
 |---|---|---|
 | **Raspberry Pi 4 oder 5** | ⭐ Empfehlung | ca. 60–100 € mit Netzteil und SD-Karte, braucht ~3 Watt, läuft immer |
+| Raspberry Pi Zero 2 W | gut | reicht aus; nur 2,4-GHz-WLAN, Netzteil 5 V / 2,5 A, unbedingt **64-Bit-Lite-System** |
 | NAS mit Docker (z. B. Synology Plus-Serie) | gut | `docker compose up -d` im Lernportal-Ordner |
 | Alter Laptop/PC | zum Ausprobieren | muss zur Lernzeit an sein, braucht viel mehr Strom |
 | FRITZ!Box | nein | kann keine Programme ausführen |
@@ -21,7 +22,8 @@ Sie wird aber gebraucht, um dem Server eine feste Adresse zu geben (Schritt 4).
 
 ### 1. SD-Karte vorbereiten (am PC)
 1. **Raspberry Pi Imager** von raspberrypi.com installieren und starten.
-2. Gerät: dein Pi-Modell · Betriebssystem: **Raspberry Pi OS Lite (64-bit)** · Speicher: die SD-Karte.
+2. Gerät: dein Pi-Modell (z. B. „Raspberry Pi Zero 2 W“) · Betriebssystem: **Raspberry Pi OS Lite (64-bit)** · Speicher: die SD-Karte.
+   Keine Desktop-Version – beim Zero 2 reicht der Arbeitsspeicher dafür nicht gut.
 3. Bei der Frage nach Anpassungen **„Einstellungen bearbeiten“** wählen:
    - Hostname: `lernportal`
    - Benutzername und Passwort festlegen (merken!)
