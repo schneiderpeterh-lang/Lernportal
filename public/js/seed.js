@@ -339,9 +339,18 @@
       id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, createdAt: now
     }];
 
+    // Wöchentlicher Englisch-Vokabeltest: jeden Donnerstag, ab dem nächsten Donnerstag
+    var dow = new Date().getDay();
+    var weeklyVocab = {
+      id: 'ex-vok-woche', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Englisch',
+      date: isoDay((4 - dow + 7) % 7), repeat: 'weekly', skipDates: [], until: null,
+      topics: 'Vokabeln der aktuellen Unit (Red Line 9) – Lernpaket jede Woche ergänzen',
+      deckIds: ['en-redline9-u2', 'en-irregular']
+    };
+
     var seed = {
       settings: settings, subjects: subjects, decks: decks, rewards: rewards,
-      exams: [], grades: [], sessions: [], progress: [], redemptions: []
+      exams: [weeklyVocab], grades: [], sessions: [], progress: [], redemptions: []
     };
 
     if (opts.demo) {
@@ -351,12 +360,11 @@
         title: 'Training: Pythagoras & quadratische Gleichungen',
         topics: ['pythagoras', 'quadgl', 'wurzeln']
       });
-      seed.exams = [
-        { id: 'ex-vok', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Unit 3', date: isoDay(3),
-          topics: 'Unit-Vokabeln und unregelmäßige Verben', deckIds: ['en-vokabeln-beispiel', 'en-irregular'] },
-        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(8),
+      weeklyVocab.deckIds = ['en-vokabeln-beispiel', 'en-irregular'];
+      seed.exams = [weeklyVocab,
+        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(7),
           topics: 'Satz des Pythagoras, quadratische Gleichungen, Wurzeln', deckIds: ['m-sa-training', 'm-formeln'] },
-        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Klassenarbeit Erörterung', date: isoDay(15),
+        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Klassenarbeit Erörterung', date: isoDay(13),
           topics: 'Dialektische Erörterung, Kommasetzung, das/dass', deckIds: ['de-eroerterung', 'de-komma', 'de-dassdas'] }
       ];
       seed.grades = [

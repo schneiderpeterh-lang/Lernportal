@@ -412,9 +412,10 @@
 
     // 14-Tage-Leiste
     var strip = h('div', { class: 'strip' });
+    var inRange = L.examList(t, LP.addDays(t, 14));
     for (var i = 0; i < 14; i++) {
       var d = LP.addDays(t, i);
-      var exs = store.list('exams').filter(function (e) { return e.date === d && !e.done; });
+      var exs = inRange.filter(function (e) { return e.date === d && !e.done; });
       var act = L.activeExams(d);
       var focusSubj = act.length ? LP.subject(act[0].exam.subjectId) : null;
       var cell = h('div', { class: 'strip-day' + (i === 0 ? ' today' : '') + (L.isLearningDay(d) ? '' : ' free'), title: LP.fmtDay(d) },
@@ -445,7 +446,7 @@
           h('div', { class: 'exam-info' },
             h('div', null, ui.subjectChip(e.subjectId), ' ', h('span', { class: 'chip' }, LP.EXAM_TYPES[e.type].short)),
             h('h3', null, e.title || LP.EXAM_TYPES[e.type].label),
-            h('p', { class: 'muted small' }, LP.fmtLong(e.date) + ' · Vorbereitung ab ' + LP.fmtDay(prepStart)))),
+            h('p', { class: 'muted small' }, LP.fmtLong(e.date) + (e.repeat ? ' · jede Woche' : '') + ' · Vorbereitung ab ' + LP.fmtDay(prepStart)))),
         e.topics ? h('p', { class: 'topics' }, h('strong', null, 'Stoff: '), e.topics) : null,
         ready !== null ? h('div', { class: 'ready big' }, h('span', { class: 'small' }, 'Vorbereitung'), ui.progressBar(ready, s.color, 'Vorbereitung'), h('strong', { class: 'tabular' }, Math.round(ready * 100) + ' %')) : null,
         decks.length ? h('div', { class: 'deck-chips' }, decks.map(function (d) { return h('span', { class: 'chip' }, d.title); })) : h('p', { class: 'muted small' }, 'Noch keine Lerninhalte verknüpft.'),
@@ -455,7 +456,7 @@
     });
     el.appendChild(listEl);
 
-    var past = store.list('exams').filter(function (e) { return e.date < t || e.done; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 6);
+    var past = store.list('exams').filter(function (e) { return !e.repeat && (e.date < t || e.done); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 6);
     if (past.length) {
       var pl = h('section', { class: 'card' }, h('h2', null, 'Vergangene Termine'));
       past.forEach(function (e) {

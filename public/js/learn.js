@@ -252,15 +252,42 @@
   function examPrepDays(exam) {
     return Number(exam.prepDays) || (LP.EXAM_TYPES[exam.type] || LP.EXAM_TYPES.sonstiges).prep;
   }
+  // Wiederkehrende Termine (z. B. Vokabeltest jeden Donnerstag) in einzelne Termine auflösen
+  function examList(from, to) {
+    var out = [];
+    store.list('exams').forEach(function (e) {
+      if (!e.date) return;
+      if (!e.repeat) { out.push(e); return; }
+      var skip = e.skipDates || [];
+      var d = e.date;
+      if (d < from) d = LP.addDays(d, Math.ceil(LP.daysBetween(d, from) / 7) * 7);
+      for (var i = 0; i < 60 && d <= to; i++) {
+        if ((!e.until || d <= e.until) && skip.indexOf(d) < 0) {
+          out.push(Object.assign({}, e, { id: e.id + '__' + d, baseId: e.id, date: d }));
+        }
+        d = LP.addDays(d, 7);
+      }
+    });
+    return out;
+  }
+  function nextOccurrence(e) {
+    var t = LP.today();
+    var list = examList(t, LP.addDays(t, 400)).filter(function (x) { return x.baseId === e.id && x.date >= t; });
+    return list.length ? list[0].date : null;
+  }
+  // Termine am heutigen Tag sind nachmittags (zur Lernzeit) schon vorbei
+  function stillAhead(e, day) {
+    return !(e.date === day && day === LP.today() && new Date().getHours() >= 12);
+  }
   function upcomingExams() {
     var t = LP.today();
-    return store.list('exams').filter(function (e) { return !e.done && e.date >= t; })
+    return examList(t, LP.addDays(t, 120)).filter(function (e) { return !e.done && e.date >= t && stillAhead(e, t); })
       .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   }
   // Prüfungen, auf die an einem Tag gelernt werden soll – nach Dringlichkeit sortiert
   function activeExams(day) {
-    return store.list('exams').filter(function (e) {
-      if (e.done || !e.date) return false;
+    return examList(day, LP.addDays(day, 31)).filter(function (e) {
+      if (e.done || !e.date || !stillAhead(e, day)) return false;
       var left = LP.daysBetween(day, e.date);
       return left >= 0 && left <= examPrepDays(e);
     }).map(function (e) {
@@ -404,7 +431,7 @@
     prog: prog, grade: grade, deckMastery: deckMastery, examReadiness: examReadiness, dueCount: dueCount,
     mathRate: mathRate, markRead: markRead, lastRead: lastRead,
     Engine: Engine,
-    examPrepDays: examPrepDays, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
+    examPrepDays: examPrepDays, examList: examList, nextOccurrence: nextOccurrence, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
     totalXp: totalXp, balance: balance, level: level, streak: streak, doneToday: doneToday, doneDays: doneDays, minutesOn: minutesOn,
     XP: XP
   };

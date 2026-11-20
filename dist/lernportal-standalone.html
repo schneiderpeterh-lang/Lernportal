@@ -799,9 +799,18 @@ window.LP.LP_DEMO_BANNER = function () {
       id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, createdAt: now
     }];
 
+    // Wöchentlicher Englisch-Vokabeltest: jeden Donnerstag, ab dem nächsten Donnerstag
+    var dow = new Date().getDay();
+    var weeklyVocab = {
+      id: 'ex-vok-woche', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Englisch',
+      date: isoDay((4 - dow + 7) % 7), repeat: 'weekly', skipDates: [], until: null,
+      topics: 'Vokabeln der aktuellen Unit (Red Line 9) – Lernpaket jede Woche ergänzen',
+      deckIds: ['en-redline9-u2', 'en-irregular']
+    };
+
     var seed = {
       settings: settings, subjects: subjects, decks: decks, rewards: rewards,
-      exams: [], grades: [], sessions: [], progress: [], redemptions: []
+      exams: [weeklyVocab], grades: [], sessions: [], progress: [], redemptions: []
     };
 
     if (opts.demo) {
@@ -811,12 +820,11 @@ window.LP.LP_DEMO_BANNER = function () {
         title: 'Training: Pythagoras & quadratische Gleichungen',
         topics: ['pythagoras', 'quadgl', 'wurzeln']
       });
-      seed.exams = [
-        { id: 'ex-vok', subjectId: 'englisch', type: 'vokabeltest', title: 'Vokabeltest Unit 3', date: isoDay(3),
-          topics: 'Unit-Vokabeln und unregelmäßige Verben', deckIds: ['en-vokabeln-beispiel', 'en-irregular'] },
-        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(8),
+      weeklyVocab.deckIds = ['en-vokabeln-beispiel', 'en-irregular'];
+      seed.exams = [weeklyVocab,
+        { id: 'ex-mathe', subjectId: 'mathe', type: 'arbeit', title: '2. Klassenarbeit', date: isoDay(7),
           topics: 'Satz des Pythagoras, quadratische Gleichungen, Wurzeln', deckIds: ['m-sa-training', 'm-formeln'] },
-        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Klassenarbeit Erörterung', date: isoDay(15),
+        { id: 'ex-deutsch', subjectId: 'deutsch', type: 'arbeit', title: 'Klassenarbeit Erörterung', date: isoDay(13),
           topics: 'Dialektische Erörterung, Kommasetzung, das/dass', deckIds: ['de-eroerterung', 'de-komma', 'de-dassdas'] }
       ];
       seed.grades = [
@@ -1960,15 +1968,42 @@ window.LP.LP_DEMO_BANNER = function () {
   function examPrepDays(exam) {
     return Number(exam.prepDays) || (LP.EXAM_TYPES[exam.type] || LP.EXAM_TYPES.sonstiges).prep;
   }
+  // Wiederkehrende Termine (z. B. Vokabeltest jeden Donnerstag) in einzelne Termine auflösen
+  function examList(from, to) {
+    var out = [];
+    store.list('exams').forEach(function (e) {
+      if (!e.date) return;
+      if (!e.repeat) { out.push(e); return; }
+      var skip = e.skipDates || [];
+      var d = e.date;
+      if (d < from) d = LP.addDays(d, Math.ceil(LP.daysBetween(d, from) / 7) * 7);
+      for (var i = 0; i < 60 && d <= to; i++) {
+        if ((!e.until || d <= e.until) && skip.indexOf(d) < 0) {
+          out.push(Object.assign({}, e, { id: e.id + '__' + d, baseId: e.id, date: d }));
+        }
+        d = LP.addDays(d, 7);
+      }
+    });
+    return out;
+  }
+  function nextOccurrence(e) {
+    var t = LP.today();
+    var list = examList(t, LP.addDays(t, 400)).filter(function (x) { return x.baseId === e.id && x.date >= t; });
+    return list.length ? list[0].date : null;
+  }
+  // Termine am heutigen Tag sind nachmittags (zur Lernzeit) schon vorbei
+  function stillAhead(e, day) {
+    return !(e.date === day && day === LP.today() && new Date().getHours() >= 12);
+  }
   function upcomingExams() {
     var t = LP.today();
-    return store.list('exams').filter(function (e) { return !e.done && e.date >= t; })
+    return examList(t, LP.addDays(t, 120)).filter(function (e) { return !e.done && e.date >= t && stillAhead(e, t); })
       .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   }
   // Prüfungen, auf die an einem Tag gelernt werden soll – nach Dringlichkeit sortiert
   function activeExams(day) {
-    return store.list('exams').filter(function (e) {
-      if (e.done || !e.date) return false;
+    return examList(day, LP.addDays(day, 31)).filter(function (e) {
+      if (e.done || !e.date || !stillAhead(e, day)) return false;
       var left = LP.daysBetween(day, e.date);
       return left >= 0 && left <= examPrepDays(e);
     }).map(function (e) {
@@ -2112,7 +2147,7 @@ window.LP.LP_DEMO_BANNER = function () {
     prog: prog, grade: grade, deckMastery: deckMastery, examReadiness: examReadiness, dueCount: dueCount,
     mathRate: mathRate, markRead: markRead, lastRead: lastRead,
     Engine: Engine,
-    examPrepDays: examPrepDays, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
+    examPrepDays: examPrepDays, examList: examList, nextOccurrence: nextOccurrence, upcomingExams: upcomingExams, activeExams: activeExams, buildPlan: buildPlan, isLearningDay: isLearningDay,
     totalXp: totalXp, balance: balance, level: level, streak: streak, doneToday: doneToday, doneDays: doneDays, minutesOn: minutesOn,
     XP: XP
   };
@@ -2871,9 +2906,10 @@ window.LP.LP_DEMO_BANNER = function () {
 
     // 14-Tage-Leiste
     var strip = h('div', { class: 'strip' });
+    var inRange = L.examList(t, LP.addDays(t, 14));
     for (var i = 0; i < 14; i++) {
       var d = LP.addDays(t, i);
-      var exs = store.list('exams').filter(function (e) { return e.date === d && !e.done; });
+      var exs = inRange.filter(function (e) { return e.date === d && !e.done; });
       var act = L.activeExams(d);
       var focusSubj = act.length ? LP.subject(act[0].exam.subjectId) : null;
       var cell = h('div', { class: 'strip-day' + (i === 0 ? ' today' : '') + (L.isLearningDay(d) ? '' : ' free'), title: LP.fmtDay(d) },
@@ -2904,7 +2940,7 @@ window.LP.LP_DEMO_BANNER = function () {
           h('div', { class: 'exam-info' },
             h('div', null, ui.subjectChip(e.subjectId), ' ', h('span', { class: 'chip' }, LP.EXAM_TYPES[e.type].short)),
             h('h3', null, e.title || LP.EXAM_TYPES[e.type].label),
-            h('p', { class: 'muted small' }, LP.fmtLong(e.date) + ' · Vorbereitung ab ' + LP.fmtDay(prepStart)))),
+            h('p', { class: 'muted small' }, LP.fmtLong(e.date) + (e.repeat ? ' · jede Woche' : '') + ' · Vorbereitung ab ' + LP.fmtDay(prepStart)))),
         e.topics ? h('p', { class: 'topics' }, h('strong', null, 'Stoff: '), e.topics) : null,
         ready !== null ? h('div', { class: 'ready big' }, h('span', { class: 'small' }, 'Vorbereitung'), ui.progressBar(ready, s.color, 'Vorbereitung'), h('strong', { class: 'tabular' }, Math.round(ready * 100) + ' %')) : null,
         decks.length ? h('div', { class: 'deck-chips' }, decks.map(function (d) { return h('span', { class: 'chip' }, d.title); })) : h('p', { class: 'muted small' }, 'Noch keine Lerninhalte verknüpft.'),
@@ -2914,7 +2950,7 @@ window.LP.LP_DEMO_BANNER = function () {
     });
     el.appendChild(listEl);
 
-    var past = store.list('exams').filter(function (e) { return e.date < t || e.done; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 6);
+    var past = store.list('exams').filter(function (e) { return !e.repeat && (e.date < t || e.done); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 6);
     if (past.length) {
       var pl = h('section', { class: 'card' }, h('h2', null, 'Vergangene Termine'));
       past.forEach(function (e) {
@@ -3204,8 +3240,8 @@ window.LP.LP_DEMO_BANNER = function () {
     if (!up.length) ec.appendChild(h('p', { class: 'muted' }, 'Noch keine Termine. Tragen Sie die nächste Arbeit oder den nächsten Vokabeltest ein – der Lernplan richtet sich danach.'));
     up.forEach(function (e) {
       var r = L.examReadiness(e), s = LP.subject(e.subjectId);
-      ec.appendChild(h('a', { class: 'list-row link-row', href: '#/eltern/termine/' + e.id },
-        ui.subjectChip(e.subjectId), h('span', { class: 'grow' }, h('strong', null, e.title || LP.EXAM_TYPES[e.type].short), h('br'), h('span', { class: 'muted small' }, LP.fmtDay(e.date) + ' · ' + LP.relDay(e.date))),
+      ec.appendChild(h('a', { class: 'list-row link-row', href: '#/eltern/termine/' + (e.baseId || e.id) },
+        ui.subjectChip(e.subjectId), h('span', { class: 'grow' }, h('strong', null, e.title || LP.EXAM_TYPES[e.type].short), h('br'), h('span', { class: 'muted small' }, LP.fmtDay(e.date) + ' · ' + LP.relDay(e.date) + (e.repeat ? ' · wöchentlich' : ''))),
         r === null ? h('span', { class: 'pill warn' }, 'Keine Inhalte') : h('span', { class: 'ready mini' }, ui.progressBar(r, s.color, 'Vorbereitung'), h('span', { class: 'small tabular' }, Math.round(r * 100) + ' %'))));
     });
     grid.appendChild(ec);
@@ -3275,8 +3311,8 @@ window.LP.LP_DEMO_BANNER = function () {
     el.appendChild(h('div', { class: 'row end' }, h('a', { class: 'btn primary', href: '#/eltern/termine/neu' }, svg(I.plus), 'Neuer Termin')));
     var all = store.list('exams').sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     var t = LP.today();
-    var upcoming = all.filter(function (e) { return e.date >= t && !e.done; });
-    var past = all.filter(function (e) { return e.date < t || e.done; }).reverse();
+    var upcoming = all.filter(function (e) { return (e.repeat || e.date >= t) && !e.done; });
+    var past = all.filter(function (e) { return !e.repeat && (e.date < t || e.done); }).reverse();
     [['Anstehend', upcoming], ['Vergangen', past]].forEach(function (grp) {
       var c = h('section', { class: 'card' }, h('h2', null, grp[0]));
       if (!grp[1].length) c.appendChild(h('p', { class: 'muted' }, grp[0] === 'Anstehend' ? 'Keine anstehenden Termine.' : 'Noch nichts.'));
@@ -3285,7 +3321,7 @@ window.LP.LP_DEMO_BANNER = function () {
         var n = (e.deckIds || []).length;
         c.appendChild(h('a', { class: 'list-row link-row', href: '#/eltern/termine/' + e.id },
           ui.subjectChip(e.subjectId),
-          h('span', { class: 'grow' }, h('strong', null, e.title || LP.EXAM_TYPES[e.type].short), h('br'), h('span', { class: 'muted small' }, LP.EXAM_TYPES[e.type].label + ' · ' + LP.fmtDay(e.date) + ' · ' + n + ' Lernpaket' + (n === 1 ? '' : 'e'))),
+          h('span', { class: 'grow' }, h('strong', null, e.title || LP.EXAM_TYPES[e.type].short), h('br'), h('span', { class: 'muted small' }, LP.EXAM_TYPES[e.type].label + ' · ' + (e.repeat ? 'jeden ' + LP.WD_LONG[LP.weekday(e.date)] + (L.nextOccurrence(e) ? ', nächster: ' + LP.fmtDay(L.nextOccurrence(e)) : ', beendet') : LP.fmtDay(e.date)) + ' · ' + n + ' Lernpaket' + (n === 1 ? '' : 'e'))),
           g ? h('span', { class: 'grade g' + Math.round(g.grade) }, String(g.grade).replace('.', ',')) : (n ? null : h('span', { class: 'pill warn' }, 'Keine Inhalte')),
           svg(I.edit)));
       });
@@ -3331,10 +3367,39 @@ window.LP.LP_DEMO_BANNER = function () {
         // Termin speichern und direkt ein passendes Lernpaket anlegen
         save(true);
       } }, svg(I.plus), 'Neues Lernpaket für diesen Termin anlegen'))));
+    // Wiederholung (z. B. Vokabeltest jeden Donnerstag)
+    var skip = (exam.skipDates || []).slice();
+    var skipBox = h('div', { class: 'deck-pick' });
+    function renderSkips() {
+      LP.clear(skipBox);
+      var start = val('ex-date') || exam.date;
+      if (!start) return;
+      var d = start, t0 = LP.today();
+      if (d < t0) d = LP.addDays(d, Math.ceil(LP.daysBetween(d, t0) / 7) * 7);
+      for (var i = 0; i < 8; i++) {
+        (function (day) {
+          skipBox.appendChild(h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: skip.indexOf(day) < 0, onchange: function () {
+            if (this.checked) skip = skip.filter(function (x) { return x !== day; }); else if (skip.indexOf(day) < 0) skip.push(day);
+          } }), h('span', null, LP.fmtDay(day))));
+        })(d);
+        d = LP.addDays(d, 7);
+      }
+    }
+    var repeatCb = h('input', { id: 'ex-repeat', type: 'checkbox', checked: !!exam.repeat });
+    var repeatBox = h('div', { class: 'field', hidden: !exam.repeat },
+      field('Wiederholen bis (optional)', h('input', { id: 'ex-until', type: 'date', value: exam.until || '' }), 'z. B. letzter Schultag vor den Ferien oder Schuljahresende.'),
+      h('span', { class: 'field-label' }, 'Findet statt am (Haken entfernen = fällt aus, z. B. Ferien oder Feiertag)'),
+      skipBox);
+    repeatCb.addEventListener('change', function () { repeatBox.hidden = !repeatCb.checked; gradeField.hidden = repeatCb.checked; renderSkips(); });
+    form.appendChild(h('label', { class: 'check' }, repeatCb, h('span', null, 'Jede Woche am gleichen Wochentag wiederholen (Datum = erster Termin)')));
+    form.appendChild(repeatBox);
+    setTimeout(function () { var di = document.getElementById('ex-date'); if (di) di.addEventListener('change', renderSkips); renderSkips(); }, 0);
     form.appendChild(h('label', { class: 'check' }, h('input', { id: 'ex-done', type: 'checkbox', checked: !!exam.done }), h('span', null, 'Erledigt (taucht nicht mehr im Lernplan auf)')));
 
     var g = store.list('grades').filter(function (x) { return x.examId === exam.id; })[0];
-    form.appendChild(field('Note (nach Rückgabe)', select('ex-grade', [['', '–']].concat([1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6].map(function (n) { return [n, String(n).replace('.', ',')]; })), g ? g.grade : ''), 'Wird automatisch in die Notenübersicht übernommen.'));
+    var gradeField = field('Note (nach Rückgabe)', select('ex-grade', [['', '–']].concat([1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6].map(function (n) { return [n, String(n).replace('.', ',')]; })), g ? g.grade : ''), 'Wird automatisch in die Notenübersicht übernommen.');
+    gradeField.hidden = !!exam.repeat;
+    form.appendChild(gradeField);
 
     form.appendChild(h('div', { class: 'row end' },
       isNew ? null : h('button', { type: 'button', class: 'btn danger ghost', onclick: function () {
@@ -3349,13 +3414,15 @@ window.LP.LP_DEMO_BANNER = function () {
       var doc = Object.assign({}, exam, {
         subjectId: val('ex-subject'), type: val('ex-type'), date: val('ex-date'), title: val('ex-title').trim(),
         topics: val('ex-topics').trim(), deckIds: Object.keys(chosen), done: document.getElementById('ex-done').checked,
-        prepDays: val('ex-prep') ? Number(val('ex-prep')) : null
+        prepDays: val('ex-prep') ? Number(val('ex-prep')) : null,
+        repeat: document.getElementById('ex-repeat').checked ? 'weekly' : null,
+        until: val('ex-until') || null, skipDates: skip
       });
       if (!doc.date) { LP.toast('Bitte ein Datum wählen.', 'warn'); return; }
       store.put('exams', doc);
-      var gv = val('ex-grade');
+      var gv = doc.repeat ? '' : val('ex-grade');
       if (gv) store.put('grades', Object.assign({}, g || { id: LP.uid('g') }, { subjectId: doc.subjectId, date: doc.date, type: doc.type, grade: Number(gv), note: doc.title || LP.EXAM_TYPES[doc.type].short, examId: doc.id }));
-      else if (g) store.del('grades', g.id);
+      else if (g && !doc.repeat) store.del('grades', g.id);
       LP.toast('Gespeichert', 'good');
       LP.go(thenNewDeck ? '#/eltern/inhalte/neu?exam=' + doc.id : '#/eltern/termine');
     }
