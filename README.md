@@ -46,6 +46,8 @@ eine **feste Lernzeit mit immer gleichem Ablauf**.
 Das Portal braucht einen Rechner im Heimnetz, der läuft, wenn gelernt wird: ein Raspberry Pi, ein NAS mit Docker
 (z. B. Synology) oder ein alter Laptop/PC. Es gibt **keine externen Abhängigkeiten** – nur Node.js ab Version 18.
 
+**Schritt-für-Schritt-Anleitung (Raspberry Pi, FRITZ!Box, Windows-Schnelltest): [docs/SERVER-EINRICHTEN.md](docs/SERVER-EINRICHTEN.md)**
+
 ### Variante 1: Direkt mit Node.js
 
 ```bash
