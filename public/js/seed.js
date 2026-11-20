@@ -337,7 +337,7 @@
 
     var settings = [{
       id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, createdAt: now,
-      lrs: true, readable: false
+      lrsSubjects: ['deutsch'], readable: false
     }];
 
     // Wöchentlicher Englisch-Vokabeltest: jeden Donnerstag, ab dem nächsten Donnerstag

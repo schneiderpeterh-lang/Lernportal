@@ -25,11 +25,10 @@ eine **feste Lernzeit mit immer gleichem Ablauf**.
 - **Schreibrunde:** Steht ein Vokabeltest an, schreibt er 10 Vokabeln auf Papier und fotografiert das Blatt.
   Claude prüft die Handschrift (optional, siehe unten) – sonst kontrolliert er selbst. Fehler werden dreimal
   abgeschrieben und kommen im Karteikasten wieder nach vorne. Eltern sehen jedes Blatt.
-- **Rechtschreibschwäche (LRS):** Einstellbar im Eltern-Bereich, bei neuen Installationen eingeschaltet.
-  Wie beim Nachteilsausgleich in der Schule zählt ein erkennbar richtiges Wort als richtig – beim Tippen,
-  im Mini-Test und in der Schreibrunde. Die korrekte Schreibweise wird groß und freundlich gezeigt
-  („So schreibt man es“) und in der Schreibrunde einmal abgeschrieben, aber nie als Fehler gewertet.
-  Ein anderes Wort (z. B. „advantage“ statt „disadvantage“) bleibt falsch. Optional: lesefreundliche Darstellung.
+- **Rechtschreibschwäche (LRS):** Im Eltern-Bereich pro Fach einstellbar (bei neuen Installationen: Deutsch).
+  In diesen Fächern zählt ein erkennbar richtiges Wort als richtig, die Schreibweise wird nur gezeigt –
+  wie beim Nachteilsausgleich der Schule. In den anderen Fächern (z. B. Englisch) zählt die Schreibweise wie im Test;
+  ein Schreibfehler wird dort als „Fast!“ gezeigt und muss einmal richtig abgetippt werden. Optional: lesefreundliche Darstellung.
 - **Termine:** Countdown, Stoff, „Vorbereitungsgrad“ in Prozent, 14-Tage-Übersicht.
 - **Motivation:** Punkte, Level, Serie (Tage am Stück), Erfolge – und **Belohnungen, die die Eltern festlegen**
   (z. B. 150 Punkte = 30 Minuten extra Zocken). Einlösen erzeugt eine Anfrage an die Eltern.

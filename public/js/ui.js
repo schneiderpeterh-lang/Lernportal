@@ -206,8 +206,10 @@
       var row = h('div', { class: 'row end' });
       var stage = 'ask';
       // Rechtschreibschwäche: erkennbar richtige Wörter zählen als richtig
-      var lenient = Boolean(LP.settings().lrs);
+      var lenient = LP.lenientFor(item.deck.subjectId);
+      var practiseSpelling = !lenient && LP.hasLrs();
       var others = (item.deck.cards || []).map(function (c) { return item.dir === 'b2a' ? c.a : c.b; });
+      var copyResult = 'wrong';
       function check() {
         if (stage === 'ask') {
           if (!input.value.trim()) { input.focus(); return; }
@@ -223,6 +225,13 @@
             input.classList.add('is-right'); input.readOnly = true;
             fbv.appendChild(h('div', { class: 'fb good' }, svg(I.check), 'Richtig!' + (LP.learn.norm(input.value) !== LP.learn.norm(item.answer) ? '  (' + item.answer + ')' : '')));
             stage = 'done'; LP.clear(row); finish('right', 900);
+          } else if (r === 'close' && practiseSpelling) {
+            // Rechtschreibung zählt in diesem Fach: Wort gewusst, Schreibweise einmal richtig abtippen
+            input.classList.add('is-close');
+            fbv.appendChild(h('div', { class: 'fb mid' }, 'Fast! Das Wort stimmt, nur die Schreibweise nicht.'));
+            fbv.appendChild(h('div', { class: 'spell-hint' }, h('span', { class: 'muted small' }, 'So schreibt man es – tippe es einmal ab:'), h('span', { class: 'spell-word' }, item.answer)));
+            stage = 'copy'; copyResult = 'close';
+            setTimeout(function () { input.classList.remove('is-close'); input.value = ''; input.placeholder = item.answer; input.focus(); }, 50);
           } else if (r === 'close') {
             input.classList.add('is-close'); input.readOnly = true;
             fbv.appendChild(h('div', { class: 'fb mid' }, 'Fast! Achte auf die Schreibweise: ', h('strong', null, item.answer)));
@@ -237,7 +246,7 @@
         } else if (stage === 'copy') {
           var r2 = LP.learn.checkText(input.value, item.answer, { lenient: lenient, others: others }).result;
           if (r2 === 'wrong') { input.classList.add('shake'); setTimeout(function () { input.classList.remove('shake'); }, 400); return; }
-          stage = 'done'; finish('wrong');
+          stage = 'done'; finish(copyResult);
         }
       }
       input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); check(); } });

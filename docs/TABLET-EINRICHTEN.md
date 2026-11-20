@@ -78,6 +78,19 @@ Funktioniert es nicht: Weg A nehmen.
 
 ---
 
+## Alternative: Schul-iPad
+
+Das Portal läuft auch auf dem iPad (Safari, Kamera für die Schreibrunde funktioniert). Sperren lässt es sich mit
+**Geführter Zugriff** (*Einstellungen → Bedienungshilfen → Geführter Zugriff*): Portal in Safari öffnen,
+dreimal die Seitentaste (bzw. Home-Taste) drücken, Code festlegen – dann kommt man ohne Code nicht aus Safari heraus.
+
+Nachteile gegenüber dem Fire-Tablet:
+- Der Geführte Zugriff muss **vor jeder Lernzeit neu gestartet** werden – und das Gerät ist sonst voll mit Schul-Apps und Ablenkung.
+- Schul-iPads werden meist von der Schule verwaltet (MDM). Ob Geführter Zugriff erlaubt ist und ob private Apps/Webseiten
+  im Heimnetz genutzt werden dürfen, entscheidet die Schule – vorher fragen.
+
+Empfehlung: Fire-Tablet als festes Lerngerät; das iPad nur als Notlösung.
+
 ## Tipps für den Alltag
 
 - **Feste Lernzeit:** Im Eltern-Bereich unter *Einstellungen* Lerntage, Uhrzeit und Dauer festlegen.

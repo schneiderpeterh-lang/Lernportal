@@ -48,7 +48,7 @@
     });
     var subj = LP.subject(step.subjectId || (picks[0] && picks[0].deck.subjectId));
     var photo = null, photoId = null;
-    var lenient = Boolean(LP.settings().lrs);
+    var lenient = LP.lenientFor(subj.id);
 
     function card() {
       LP.clear(host);

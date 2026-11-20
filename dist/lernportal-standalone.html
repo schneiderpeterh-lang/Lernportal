@@ -839,7 +839,7 @@ window.LP.LP_DEMO_BANNER = function () {
 
     var settings = [{
       id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, createdAt: now,
-      lrs: true, readable: false
+      lrsSubjects: ['deutsch'], readable: false
     }];
 
     // Wöchentlicher Englisch-Vokabeltest: jeden Donnerstag, ab dem nächsten Donnerstag
@@ -1246,8 +1246,16 @@ window.LP.LP_DEMO_BANNER = function () {
 
   /* ---------------------------------------------------------------- Einstellungen & Fächer */
 
-  var DEFAULT_SETTINGS = { id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, lrs: false, readable: false };
+  var DEFAULT_SETTINGS = { id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, lrsSubjects: [], readable: false };
   function settings() { return Object.assign({}, DEFAULT_SETTINGS, store.get('settings', 'main') || {}); }
+  // Rechtschreibung wird in diesen Fächern nicht bewertet (Nachteilsausgleich bei LRS)
+  function lenientFor(subjectId) {
+    var st = settings();
+    var list = st.lrsSubjects || (st.lrs ? ['deutsch'] : []);
+    return list.indexOf(subjectId) >= 0;
+  }
+  // Ist überhaupt eine Rechtschreibschwäche eingetragen? Dann Schreibweise in den anderen Fächern gezielt üben
+  function hasLrs() { var st = settings(); return Boolean((st.lrsSubjects && st.lrsSubjects.length) || st.lrs); }
   function subjects() { return store.list('subjects').sort(function (a, b) { return (a.order || 99) - (b.order || 99) || a.name.localeCompare(b.name); }); }
   function subject(id) { return store.get('subjects', id) || { id: id, name: id || 'Allgemein', color: '#6b7280', short: '?' }; }
 
@@ -1271,7 +1279,7 @@ window.LP.LP_DEMO_BANNER = function () {
     iso: iso, today: today, parseDay: parseDay, addDays: addDays, daysBetween: daysBetween, weekday: weekday,
     fmtDay: fmtDay, fmtShort: fmtShort, fmtLong: fmtLong, relDay: relDay, fmtClock: fmtClock, WD: WD, WD_LONG: WD_LONG,
     uid: uid, shuffle: shuffle, clamp: clamp, lsGet: lsGet, lsSet: lsSet, lsDel: lsDel, toast: toast, copyText: copyText,
-    store: store, settings: settings, subjects: subjects, subject: subject, EXAM_TYPES: EXAM_TYPES, DECK_KINDS: DECK_KINDS
+    store: store, settings: settings, lenientFor: lenientFor, hasLrs: hasLrs, subjects: subjects, subject: subject, EXAM_TYPES: EXAM_TYPES, DECK_KINDS: DECK_KINDS
   });
 })();
 
@@ -2481,8 +2489,10 @@ window.LP.LP_DEMO_BANNER = function () {
       var row = h('div', { class: 'row end' });
       var stage = 'ask';
       // Rechtschreibschwäche: erkennbar richtige Wörter zählen als richtig
-      var lenient = Boolean(LP.settings().lrs);
+      var lenient = LP.lenientFor(item.deck.subjectId);
+      var practiseSpelling = !lenient && LP.hasLrs();
       var others = (item.deck.cards || []).map(function (c) { return item.dir === 'b2a' ? c.a : c.b; });
+      var copyResult = 'wrong';
       function check() {
         if (stage === 'ask') {
           if (!input.value.trim()) { input.focus(); return; }
@@ -2498,6 +2508,13 @@ window.LP.LP_DEMO_BANNER = function () {
             input.classList.add('is-right'); input.readOnly = true;
             fbv.appendChild(h('div', { class: 'fb good' }, svg(I.check), 'Richtig!' + (LP.learn.norm(input.value) !== LP.learn.norm(item.answer) ? '  (' + item.answer + ')' : '')));
             stage = 'done'; LP.clear(row); finish('right', 900);
+          } else if (r === 'close' && practiseSpelling) {
+            // Rechtschreibung zählt in diesem Fach: Wort gewusst, Schreibweise einmal richtig abtippen
+            input.classList.add('is-close');
+            fbv.appendChild(h('div', { class: 'fb mid' }, 'Fast! Das Wort stimmt, nur die Schreibweise nicht.'));
+            fbv.appendChild(h('div', { class: 'spell-hint' }, h('span', { class: 'muted small' }, 'So schreibt man es – tippe es einmal ab:'), h('span', { class: 'spell-word' }, item.answer)));
+            stage = 'copy'; copyResult = 'close';
+            setTimeout(function () { input.classList.remove('is-close'); input.value = ''; input.placeholder = item.answer; input.focus(); }, 50);
           } else if (r === 'close') {
             input.classList.add('is-close'); input.readOnly = true;
             fbv.appendChild(h('div', { class: 'fb mid' }, 'Fast! Achte auf die Schreibweise: ', h('strong', null, item.answer)));
@@ -2512,7 +2529,7 @@ window.LP.LP_DEMO_BANNER = function () {
         } else if (stage === 'copy') {
           var r2 = LP.learn.checkText(input.value, item.answer, { lenient: lenient, others: others }).result;
           if (r2 === 'wrong') { input.classList.add('shake'); setTimeout(function () { input.classList.remove('shake'); }, 400); return; }
-          stage = 'done'; finish('wrong');
+          stage = 'done'; finish(copyResult);
         }
       }
       input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); check(); } });
@@ -2670,7 +2687,7 @@ window.LP.LP_DEMO_BANNER = function () {
     });
     var subj = LP.subject(step.subjectId || (picks[0] && picks[0].deck.subjectId));
     var photo = null, photoId = null;
-    var lenient = Boolean(LP.settings().lrs);
+    var lenient = LP.lenientFor(subj.id);
 
     function card() {
       LP.clear(host);
@@ -4135,7 +4152,7 @@ window.LP.LP_DEMO_BANNER = function () {
       store.put('settings', Object.assign({}, store.get('settings', 'main') || {}, {
         id: 'main', studentName: val('st-name').trim(), days: days, startTime: val('st-time') || '16:00',
         minutes: LP.clamp(Number(val('st-min')) || 45, 15, 120), idleSeconds: LP.clamp(Number(val('st-idle')) || 90, 30, 600),
-        lrs: document.getElementById('st-lrs').checked, readable: document.getElementById('st-readable').checked
+        lrsSubjects: Array.prototype.slice.call(document.querySelectorAll('[data-lrs]')).filter(function (cb) { return cb.checked; }).map(function (cb) { return cb.getAttribute('data-lrs'); }), lrs: undefined, readable: document.getElementById('st-readable').checked
       }));
       LP.toast('Einstellungen gespeichert', 'good');
       LP.applyReadable();
@@ -4149,9 +4166,10 @@ window.LP.LP_DEMO_BANNER = function () {
       field('Pause bei Untätigkeit nach (Sek.)', h('input', { id: 'st-idle', type: 'number', min: 30, max: 600, value: st.idleSeconds }), 'Die Uhr stoppt, wenn nichts getan wird.')),
     h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerntage'), dayBox),
     h('h2', null, 'Rechtschreibschwäche'),
-    h('label', { class: 'check' }, h('input', { id: 'st-lrs', type: 'checkbox', checked: !!st.lrs }),
-      h('span', null, h('strong', null, 'Rechtschreibung nicht bewerten'), h('br'), h('span', { class: 'muted small' },
-        'Wie beim Nachteilsausgleich in der Schule: Ein erkennbar richtiges Wort zählt als richtig. Die korrekte Schreibweise wird freundlich gezeigt, aber nicht als Fehler gewertet – beim Tippen und in der Schreibrunde.'))),
+    h('p', { class: 'muted small' }, 'Rechtschreibung nicht bewerten in (wie beim Nachteilsausgleich der Schule): Ein erkennbar richtiges Wort zählt als richtig, die Schreibweise wird nur gezeigt. In den übrigen Fächern zählt die Schreibweise; ist hier mindestens ein Fach angehakt, übt Ihr Kind falsch geschriebene Wörter dort zusätzlich durch einmaliges Abtippen.'),
+    h('div', { class: 'day-pick' }, LP.subjects().map(function (sub) {
+      return h('label', { class: 'check lrs-subj' }, h('input', { type: 'checkbox', 'data-lrs': sub.id, checked: LP.lenientFor(sub.id) }), h('span', null, sub.name));
+    })),
     h('label', { class: 'check' }, h('input', { id: 'st-readable', type: 'checkbox', checked: !!st.readable }),
       h('span', null, h('strong', null, 'Lesefreundliche Darstellung'), h('br'), h('span', { class: 'muted small' }, 'Größere Schrift, mehr Abstand zwischen Buchstaben und Zeilen, keine Kursivschrift.'))),
     h('div', { class: 'row end' }, h('button', { class: 'btn primary', type: 'submit' }, 'Speichern')));

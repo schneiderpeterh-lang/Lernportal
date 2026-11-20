@@ -624,7 +624,7 @@
       store.put('settings', Object.assign({}, store.get('settings', 'main') || {}, {
         id: 'main', studentName: val('st-name').trim(), days: days, startTime: val('st-time') || '16:00',
         minutes: LP.clamp(Number(val('st-min')) || 45, 15, 120), idleSeconds: LP.clamp(Number(val('st-idle')) || 90, 30, 600),
-        lrs: document.getElementById('st-lrs').checked, readable: document.getElementById('st-readable').checked
+        lrsSubjects: Array.prototype.slice.call(document.querySelectorAll('[data-lrs]')).filter(function (cb) { return cb.checked; }).map(function (cb) { return cb.getAttribute('data-lrs'); }), lrs: undefined, readable: document.getElementById('st-readable').checked
       }));
       LP.toast('Einstellungen gespeichert', 'good');
       LP.applyReadable();
@@ -638,9 +638,10 @@
       field('Pause bei Untätigkeit nach (Sek.)', h('input', { id: 'st-idle', type: 'number', min: 30, max: 600, value: st.idleSeconds }), 'Die Uhr stoppt, wenn nichts getan wird.')),
     h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Lerntage'), dayBox),
     h('h2', null, 'Rechtschreibschwäche'),
-    h('label', { class: 'check' }, h('input', { id: 'st-lrs', type: 'checkbox', checked: !!st.lrs }),
-      h('span', null, h('strong', null, 'Rechtschreibung nicht bewerten'), h('br'), h('span', { class: 'muted small' },
-        'Wie beim Nachteilsausgleich in der Schule: Ein erkennbar richtiges Wort zählt als richtig. Die korrekte Schreibweise wird freundlich gezeigt, aber nicht als Fehler gewertet – beim Tippen und in der Schreibrunde.'))),
+    h('p', { class: 'muted small' }, 'Rechtschreibung nicht bewerten in (wie beim Nachteilsausgleich der Schule): Ein erkennbar richtiges Wort zählt als richtig, die Schreibweise wird nur gezeigt. In den übrigen Fächern zählt die Schreibweise; ist hier mindestens ein Fach angehakt, übt Ihr Kind falsch geschriebene Wörter dort zusätzlich durch einmaliges Abtippen.'),
+    h('div', { class: 'day-pick' }, LP.subjects().map(function (sub) {
+      return h('label', { class: 'check lrs-subj' }, h('input', { type: 'checkbox', 'data-lrs': sub.id, checked: LP.lenientFor(sub.id) }), h('span', null, sub.name));
+    })),
     h('label', { class: 'check' }, h('input', { id: 'st-readable', type: 'checkbox', checked: !!st.readable }),
       h('span', null, h('strong', null, 'Lesefreundliche Darstellung'), h('br'), h('span', { class: 'muted small' }, 'Größere Schrift, mehr Abstand zwischen Buchstaben und Zeilen, keine Kursivschrift.'))),
     h('div', { class: 'row end' }, h('button', { class: 'btn primary', type: 'submit' }, 'Speichern')));

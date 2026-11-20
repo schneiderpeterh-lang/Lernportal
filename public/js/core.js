@@ -346,8 +346,16 @@
 
   /* ---------------------------------------------------------------- Einstellungen & Fächer */
 
-  var DEFAULT_SETTINGS = { id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, lrs: false, readable: false };
+  var DEFAULT_SETTINGS = { id: 'main', studentName: '', days: [1, 2, 3, 4, 5], startTime: '16:00', minutes: 45, idleSeconds: 90, lrsSubjects: [], readable: false };
   function settings() { return Object.assign({}, DEFAULT_SETTINGS, store.get('settings', 'main') || {}); }
+  // Rechtschreibung wird in diesen Fächern nicht bewertet (Nachteilsausgleich bei LRS)
+  function lenientFor(subjectId) {
+    var st = settings();
+    var list = st.lrsSubjects || (st.lrs ? ['deutsch'] : []);
+    return list.indexOf(subjectId) >= 0;
+  }
+  // Ist überhaupt eine Rechtschreibschwäche eingetragen? Dann Schreibweise in den anderen Fächern gezielt üben
+  function hasLrs() { var st = settings(); return Boolean((st.lrsSubjects && st.lrsSubjects.length) || st.lrs); }
   function subjects() { return store.list('subjects').sort(function (a, b) { return (a.order || 99) - (b.order || 99) || a.name.localeCompare(b.name); }); }
   function subject(id) { return store.get('subjects', id) || { id: id, name: id || 'Allgemein', color: '#6b7280', short: '?' }; }
 
@@ -371,6 +379,6 @@
     iso: iso, today: today, parseDay: parseDay, addDays: addDays, daysBetween: daysBetween, weekday: weekday,
     fmtDay: fmtDay, fmtShort: fmtShort, fmtLong: fmtLong, relDay: relDay, fmtClock: fmtClock, WD: WD, WD_LONG: WD_LONG,
     uid: uid, shuffle: shuffle, clamp: clamp, lsGet: lsGet, lsSet: lsSet, lsDel: lsDel, toast: toast, copyText: copyText,
-    store: store, settings: settings, subjects: subjects, subject: subject, EXAM_TYPES: EXAM_TYPES, DECK_KINDS: DECK_KINDS
+    store: store, settings: settings, lenientFor: lenientFor, hasLrs: hasLrs, subjects: subjects, subject: subject, EXAM_TYPES: EXAM_TYPES, DECK_KINDS: DECK_KINDS
   });
 })();
